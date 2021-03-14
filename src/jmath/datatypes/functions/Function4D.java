@@ -47,6 +47,6 @@ public interface Function4D extends Function<Double, Point3D> {
     }
 
     default TernaryFunction f() {
-        return new TernaryFunction(this);
+        return (TernaryFunction) this;
     }
 }

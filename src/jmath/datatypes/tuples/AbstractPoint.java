@@ -7,7 +7,6 @@ public interface AbstractPoint extends Serializable {
     int CoordinateY = 1;
     int CoordinateZ = 2;
     int CoordinateW = 3;
-    int CoordinateV = 4;
 
     double getCoordinate(int numOfCoordinate);
     double distanceFromOrigin();

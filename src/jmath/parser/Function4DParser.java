@@ -184,6 +184,7 @@ public class Function4DParser implements Parser<Function4D> {
             switch (type) {
                 case DERIVATIVE: return (x, y, z) -> Derivative.derivative(p1.f2D(y, z), p2.atOrigin().intValue(), p3.atOrigin().intValue()).valueAt(x);
                 case RANDOM: return (x, y, z) -> p1.atOrigin() + (int) (((p2.atOrigin() - p1.atOrigin()) / p3.atOrigin()) * random()) * p3.atOrigin();
+                case ARC3: return new TernaryFunction(p1, p2, p3);
             }
         } else if (params.size() == 4) {
             var p1 = doOrderOfOperations(params.get(0));

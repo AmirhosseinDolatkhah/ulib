@@ -1,4 +1,4 @@
-package visualization.shapes;
+package visualization.shapes.shape2d;
 
 import jmath.datatypes.functions.Arc2D;
 import jmath.functions.utils.Sampling;
@@ -15,7 +15,7 @@ public class Shape2D implements Render {
     private boolean isFill;
     private Runnable tick;
     private final ArrayList<Arc2D> bounds;
-    private final CoordinatedScreen canvas;
+    private final CoordinatedScreen cs;
     private float thicknessOfBounds;
     private int numOfThreadsForSampling;
     private Color color;
@@ -23,12 +23,14 @@ public class Shape2D implements Render {
     private double tL;
     private double tU;
     private boolean doTick;
+    private boolean isVisible;
 
-    public Shape2D(CoordinatedScreen canvas, Color color, double tL, double tU, Arc2D... arcs) {
-        this.canvas = canvas;
+    public Shape2D(CoordinatedScreen cs, Color color, double tL, double tU, Arc2D... arcs) {
+        this.cs = cs;
         this.color = color;
         this.tL = tL;
         this.tU = tU;
+        isVisible = true;
         deltaOfSampling = 0.01;
         numOfThreadsForSampling = 10;
         thicknessOfBounds = 1.5f;
@@ -107,8 +109,8 @@ public class Shape2D implements Render {
         return numOfThreadsForSampling;
     }
 
-    public CoordinatedScreen getCanvas() {
-        return canvas;
+    public CoordinatedScreen getCs() {
+        return cs;
     }
 
     public Color getColor() {
@@ -124,13 +126,22 @@ public class Shape2D implements Render {
     }
 
     @Override
+    public final boolean isVisible() {
+        return isVisible;
+    }
+
+    public void setVisible(boolean visible) {
+        isVisible = visible;
+    }
+
+    @Override
     public void render(Graphics2D g2d) {
         for (var b : bounds) {
             var sample = Sampling.multiThreadSampling(b, tL, tU, deltaOfSampling, numOfThreadsForSampling);
             if (isFill) {
-                Graph2DCanvas.flat2DSurfacePlotter(sample, color.darker().darker(), color, canvas::screenX, canvas::screenY, g2d);
+                Graph2DCanvas.flat2DSurfacePlotter(sample, color.darker().darker(), color, cs, g2d);
             } else {
-                Graph2DCanvas.typicalPlotter(sample, color, canvas::screenX, canvas::screenY, g2d);
+                Graph2DCanvas.typicalPlotter(sample, color, cs, g2d);
             }
         }
     }

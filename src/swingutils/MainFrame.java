@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class MainFrame extends JFrame implements Runnable {
     public static final int DEFAULT_HEIGHT = 720;
     public static final int DEFAULT_WIDTH = DEFAULT_HEIGHT * 16 / 9;
@@ -24,6 +25,14 @@ public class MainFrame extends JFrame implements Runnable {
         isFullScreen = false;
 
         init();
+    }
+
+    public MainFrame(String title) {
+        this(title, true);
+    }
+
+    public MainFrame() {
+        this(null, true);
     }
 
     private void init() {
@@ -146,7 +155,7 @@ public class MainFrame extends JFrame implements Runnable {
         trayIcon.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if(e.getButton() == MouseEvent.BUTTON1) {
+                if (e.getButton() == MouseEvent.BUTTON1) {
                     main.setVisible(true);
                     main.setState(Frame.NORMAL);
                 }
@@ -217,7 +226,7 @@ public class MainFrame extends JFrame implements Runnable {
     public void toggleDarkTheme() {
         isDark = !isDark;
         handleNimbusProperties();
-        getAllComponents(this).stream().map(e -> (JComponent) e).forEach(JComponent::updateUI);
+        getAllComponents(this).stream().filter(e -> e instanceof JComponent).map(e -> (JComponent) e).forEach(JComponent::updateUI);
         repaint();
     }
 

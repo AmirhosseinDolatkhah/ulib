@@ -74,10 +74,50 @@ public interface Arc3D extends Function<Point3D, Double> {
 //        asArc2D().renderWithParams(g2d, canvas, color, l, u, delta, numOfThreads);
 //    }
 
+    static Arc3D toArc3D(Arc2D arc, Point3D offset) {
+        var x = arc.fx();
+        var y = arc.fy();
+        return t -> new Point3D(
+                x.valueAt(t) + offset.x,
+                y.valueAt(t) + offset.y,
+                offset.z
+        );
+    }
+
     static Arc3D circle(Point3D center, double radius) {
-        var xc = center.x;
-        var yc = center.y;
-        var zc = center.z;
-        return t -> new Point3D(radius * Math.sin(t) + xc, radius * Math.cos(t) + yc, zc);
+//        var xc = center.x;
+//        var yc = center.y;
+//        var zc = center.z;
+//        return t -> new Point3D(radius * Math.sin(t) + xc, radius * Math.cos(t) + yc, zc);
+        return toArc3D(Arc2D.circle(new Point2D(), radius), center);
+    }
+
+    static Arc3D circle(Point3D center, double radius, Point3D normal) {
+//        var tmp = (normal.x + normal.y) / normal.z;
+//        var a = new Point3D(-normal.y * tmp - normal.z, normal.z + normal.x * tmp, normal.x - normal.y).normalize();
+//        var b = new Point3D(1, 1, -tmp).normalize();
+        return rotatedArc2D(Arc2D.circle(new Point2D(), radius), center, normal);
+//        return t -> new Point3D(
+//                center.x + radius * Math.cos(t) * a.x + radius * Math.sin(t) * b.x,
+//                center.y + radius * Math.cos(t) * a.y + radius * Math.sin(t) * b.y,
+//                center.z + radius * Math.cos(t) * a.z + radius * Math.sin(t) * b.z
+//        );
+    }
+    
+    static Arc3D rotatedArc2D(Arc2D arc, Point3D offset, Point3D normal) {
+        var tmp = (normal.x + normal.y) / normal.z;
+        var a = new Point3D(-normal.y * tmp - normal.z, normal.z + normal.x * tmp, normal.x - normal.y).normalize();
+        var b = new Point3D(1, 1, -tmp).normalize();
+        var x = arc.fx();
+        var y = arc.fy();
+        return t -> new Point3D(
+                offset.x + x.valueAt(t) * a.x + y.valueAt(t) * b.x,
+                offset.y + x.valueAt(t) * a.y + y.valueAt(t) * b.y,
+                offset.z + x.valueAt(t) * a.z + y.valueAt(t) * b.z
+        );
+    }
+    
+    static Arc3D rotatedArc2D(Arc2D arc, Point3D normal) {
+        return rotatedArc2D(arc, new Point3D(), normal);
     }
 }

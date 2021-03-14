@@ -1,4 +1,4 @@
-package visualization.shapes.shapes3d;
+package visualization.shapes.shape3d;
 
 import jmath.datatypes.functions.Arc3D;
 import jmath.datatypes.tuples.Point3D;
@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SuppressWarnings("unused")
 public final class FlatSurface extends Shape3D {
     private Color color;
-    private final Color fixedColor;
+    private Color fixedColor;
     private boolean isFilled;
     private float thickness;
 
@@ -31,8 +31,16 @@ public final class FlatSurface extends Shape3D {
         this(canvas, color, true, 2, points);
     }
 
+    public FlatSurface(CoordinatedScreen canvas, boolean isFilled, Color color, Point3D... points) {
+        this(canvas, color, isFilled, 2, points);
+    }
+
     public FlatSurface(CoordinatedScreen canvas, Color color, boolean isFilled, float thickness, List<Point3D> points) {
         this(canvas, color, true, 2, points.toArray(new Point3D[] {}));
+    }
+
+    public void setFixedColor(Color fixedColor) {
+        this.fixedColor = fixedColor;
     }
 
     public Color getFixedColor() {
@@ -77,17 +85,22 @@ public final class FlatSurface extends Shape3D {
     }
 
     @Override
+    public boolean inViewPort() {
+        return cs.camera().inViewPort(getCenter());
+    }
+
+    @Override
     public void render(Graphics2D g2d) {
-        if (!isVisible)
-            return;
         Polygon poly = new Polygon();
-        for (var p : points)
-            poly.addPoint(cs.screenX(p.x), cs.screenY(p.y));
+        for (var p : points) {
+            var pp = cs.screen(p);
+            poly.addPoint(pp.x, pp.y);
+        }
         g2d.setColor(color);
-        g2d.setStroke(new BasicStroke(thickness));
         if (isFilled) {
             g2d.fillPolygon(poly);
         } else {
+            g2d.setStroke(new BasicStroke(thickness));
             g2d.drawPolygon(poly);
         }
         super.render(g2d);

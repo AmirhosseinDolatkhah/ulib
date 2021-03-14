@@ -1,8 +1,7 @@
 package jmath.datatypes.functions;
 
-//import animation.canvaspanel.CoordinatedCanvasPanel;
-//import animation.canvaspanel.Graph2DPanel;
 import jmath.datatypes.tuples.Point2D;
+import jmath.datatypes.tuples.Point3D;
 import jmath.functions.utils.Sampling;
 
 import java.awt.*;
@@ -32,6 +31,13 @@ public interface Arc2D extends Function<Point2D, Double> {
 
     default Arc2D derivative(int order, double delta) {
         return t -> new Point2D(fx().derivative(delta, order).valueAt(t), fy().derivative(delta, order).valueAt(t));
+    }
+
+    static Arc2D circle(Point2D center, double radius) {
+        return t -> new Point2D(
+                center.x + radius * Math.cos(t),
+                center.y + radius * Math.sin(t)
+        );
     }
 
     @Override

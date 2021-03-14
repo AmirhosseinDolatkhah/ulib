@@ -3,7 +3,12 @@ package jmath.datatypes.tuples;
 import jmath.datatypes.functions.Function2D;
 import jmath.datatypes.functions.Function4D;
 import jmath.datatypes.functions.Mapper3D;
+import jmath.datatypes.matrix.MatUtils;
+import visualization.canvas.CoordinatedCanvas;
+import visualization.canvas.CoordinatedScreen;
 
+import java.awt.*;
+import java.util.Arrays;
 import java.util.Objects;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -16,6 +21,7 @@ public class Point3D extends SortableTuple<Double> implements Comparable<Point3D
     public static final int Z_COMPARE = 3;
     public static final int FUNCTION_COMPARATOR = 4;
 
+    @Deprecated
     public static final Point3D NaN = new Point3D(Double.NaN, Double.NaN, Double.NaN);
 
     public double x;
@@ -39,6 +45,10 @@ public class Point3D extends SortableTuple<Double> implements Comparable<Point3D
 
     public Point3D(Point2D p, double z) {
         this(p.x, p.y, z);
+    }
+
+    public Point3D(Point2D p) {
+        this(p.x, p.y, 0);
     }
 
     @Override
@@ -180,10 +190,46 @@ public class Point3D extends SortableTuple<Double> implements Comparable<Point3D
 
     public Point3D normalize() {
         var magnitude = distanceFromOrigin();
+        if (magnitude == 1)
+            return this;
         x /= magnitude;
         y /= magnitude;
         z /= magnitude;
         return this;
+    }
+
+    public Point3D affectMatrix(double[][] mat) {
+        var newX = x * mat[0][0] + x * mat[0][1] + x * mat[0][2];
+        var newY = x * mat[1][0] + x * mat[1][1] + x * mat[1][2];
+        var newZ = x * mat[2][0] + x * mat[2][1] + x * mat[2][2];
+        set(newX, newY, newZ);
+        return this;
+    }
+
+    public Point3D add(Point3D... points) {
+        Arrays.stream(points).forEach(this::addVector);
+        return this;
+    }
+
+    public Point3D sub(Point3D p) {
+        x -= p.x;
+        y -= p.y;
+        z -= p.z;
+        return this;
+    }
+
+    public Point3D sub(Point3D... points) {
+        Arrays.stream(points).forEach(this::sub);
+        return this;
+    }
+
+    public Point onScreenAddress(CoordinatedScreen cs) {
+        return cs.screen(this);
+    }
+
+    @Deprecated
+    public Point3D rotate(Point3D currentDirectionVector, Point3D newDirectionVector) {
+        return affectMatrix(matrixToConvertDirection(currentDirectionVector, newDirectionVector));
     }
 
     public double dotProduct(Point3D p) {
@@ -200,6 +246,11 @@ public class Point3D extends SortableTuple<Double> implements Comparable<Point3D
 
     public double pointToValue(Function4D f) {
         return f.valueAt(this);
+    }
+
+    public Point2D asPoint2D(double xAngle, double yAngle, double zAngle) {
+        var tmp = new Point3D(this).rotate(xAngle, yAngle, zAngle);
+        return new Point2D(tmp.x, tmp.y);
     }
 
     @Override
@@ -274,8 +325,7 @@ public class Point3D extends SortableTuple<Double> implements Comparable<Point3D
 
     public static Point3D sum(Point3D... points) {
         var res = new Point3D();
-        for (var p : points)
-            res.addVector(p);
+        Arrays.stream(points).forEach(res::addVector);
         return res;
     }
 
@@ -293,5 +343,37 @@ public class Point3D extends SortableTuple<Double> implements Comparable<Point3D
 
     public static double complexProduct(Point3D dotVector, Point3D crossVector1, Point3D crossVector2) {
         return dotProduct(dotVector, crossProduct(crossVector1, crossVector2));
+    }
+
+    public static Point3D affectMatrix(Point3D p, double[][] mat) {
+        return new Point3D(
+                mat[0][0] * p.x + mat[0][1] * p.y + mat[0][2] * p.z,
+                mat[1][0] * p.x + mat[1][1] * p.y + mat[1][2] * p.z,
+                mat[2][0] * p.x + mat[2][1] * p.y + mat[2][2] * p.z
+        );
+    }
+
+    public static Point3D getNormalVecFrom3Point(Point3D p1, Point3D p2, Point3D p3) {
+        return sub(p1, p2).crossProduct(sub(p1, p3)).normalize();
+    }
+
+    @Deprecated
+    private static double[][] matrixToConvertDirection(Point3D srcVector, Point3D dstVector) {
+        var a = new Point3D(srcVector).normalize();
+        var b = new Point3D(dstVector).normalize();
+        var v = crossProduct(a, b);
+        var c = dotProduct(a, b);
+        c = 1 / (1 + c);
+        var vv = new double[][] {
+                {0, -v.z*c, v.y*c},
+                {v.z*c, 0, -v.x*c},
+                {-v.y*c, v.x*c, 0}
+        };
+        var v2 = MatUtils.mul(vv, vv);
+        return new double[][] {
+                {1 + vv[0][0] + v2[0][0], vv[0][1] + v2[0][1], vv[0][2] + v2[0][2]},
+                {vv[1][0] + v2[1][0], 1 + vv[1][1] + v2[1][1], vv[1][2] + v2[1][2]},
+                {vv[2][0] + v2[2][0], vv[2][1] + v2[2][1], 1 + vv[2][2] + v2[2][2]}
+        };
     }
 }

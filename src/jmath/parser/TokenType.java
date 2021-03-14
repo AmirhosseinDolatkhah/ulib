@@ -34,6 +34,7 @@ public enum TokenType implements Serializable {
     FOURIER_SERIES("fourier"),
     TAYLOR_SERIES("taylor"),
     ARC("arc"),
+    ARC3("arc3"),
     AREA("area"),
     LAPLACE("laplace"),
     COMMA(","),
@@ -53,7 +54,7 @@ public enum TokenType implements Serializable {
     public static final TokenType[] FUNCTIONS = {
             SINE, COSINE, TANGENT, COTANGENT, SECANT, SQUARE_ROOT,
             CEILING, FLOOR, LOG, MODULO, ABSOLUTE_VALUE, CO_SECANT,
-            ARC, AREA,
+            ARC, AREA, ARC3,
             LOG10, LOG2, INVERSE, TAYLOR_SERIES, RANDOM,
             DERIVATIVE, INTEGRAL, FOURIER_SERIES, LAPLACE
     };

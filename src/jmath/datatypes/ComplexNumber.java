@@ -6,6 +6,8 @@ import java.util.Objects;
 
 @SuppressWarnings("unused")
 public class ComplexNumber implements Comparable<ComplexNumber> {
+    public static final ComplexNumber i = new ComplexNumber(0, 1, false);
+
     public final double realValue;
     public final double imaginaryValue;
     public final double phase;

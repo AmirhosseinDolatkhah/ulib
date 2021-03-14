@@ -3,6 +3,7 @@ package utils;
 import java.util.ArrayList;
 import java.util.Collection;
 
+@Deprecated
 public class EnArrayList<T> extends ArrayList<T> {
 
     @Override

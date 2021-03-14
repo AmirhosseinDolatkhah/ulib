@@ -1,4 +1,4 @@
-package visualization.shapes.shapes3d;
+package visualization.shapes.shape3d;
 
 import jmath.datatypes.tuples.Point3D;
 import utils.Utils;
@@ -69,11 +69,11 @@ public final class Line3D extends Shape3D {
 
     @Override
     public void render(Graphics2D g2d) {
-        if (!isVisible)
-            return;
         g2d.setColor(color);
         g2d.setStroke(new BasicStroke(thickness));
-        g2d.drawLine(cs.screenX(start.x), cs.screenY(start.y), cs.screenX(end.x), cs.screenY(end.y));
+        var s = cs.screen(start);
+        var e = cs.screen(end);
+        g2d.drawLine(s.x, s.y, e.x, e.y);
         super.render(g2d);
     }
 }

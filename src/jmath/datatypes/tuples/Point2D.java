@@ -3,6 +3,7 @@ package jmath.datatypes.tuples;
 import jmath.datatypes.functions.Function2D;
 import jmath.datatypes.functions.Function3D;
 
+import java.awt.*;
 import java.util.Objects;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -32,6 +33,10 @@ public class Point2D extends SortableTuple<Double> implements Comparable<Point2D
 
     public Point2D() {
         this(0, 0);
+    }
+
+    public Point2D(Point p) {
+        this(p.x, p.y);
     }
 
     @Override

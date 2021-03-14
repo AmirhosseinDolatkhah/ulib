@@ -1,7 +1,8 @@
-package visualization.shapes.shapes3d;
+package visualization.shapes.shape3d;
 
 import jmath.datatypes.functions.Arc3D;
 import jmath.datatypes.tuples.Point2D;
+import jmath.datatypes.tuples.Point3D;
 import jmath.functions.utils.Sampling;
 import utils.Utils;
 import visualization.canvas.CoordinatedScreen;
@@ -13,6 +14,8 @@ import java.util.ArrayList;
 public final class Curve3D extends Shape3D {
     private Color color;
     private float thickness;
+    private final Point3D xBound;
+    private final Arc3D[] arcs;
 
     public Curve3D(CoordinatedScreen canvas, Color color, float thickness, double l, double u, double delta, Arc3D... arcs) {
         super(canvas);
@@ -21,10 +24,45 @@ public final class Curve3D extends Shape3D {
         var domain = Sampling.sample(l, u, delta);
         for (var a : arcs)
             domain.forEach(t -> getPoints().add(a.valueAt(t)));
+        xBound = new Point3D(l, u, delta);
+        this.arcs = arcs;
     }
 
     public Curve3D(CoordinatedScreen canvas, double l, double u, double delta, Arc3D... arcs) {
         this(canvas, Utils.randomColor(), 2, l, u, delta, arcs);
+    }
+
+    public double getLowBoundX() {
+        return xBound.x;
+    }
+
+    public double getUpBoundX() {
+        return xBound.y;
+    }
+
+    public double getDeltaX() {
+        return xBound.z;
+    }
+
+    public void setLowBoundX(double xL) {
+        xBound.x = xL;
+        reset();
+    }
+
+    public void setUpBoundX(double xU) {
+        xBound.y = xU;
+        reset();
+    }
+
+    public void setDeltaX(double deltaX) {
+        xBound.z = deltaX;
+        reset();
+    }
+
+    private void reset() {
+        points.clear();
+        components.clear();
+        points.addAll(new Curve3D(cs, getLowBoundX(), getUpBoundX(), getDeltaX(), arcs).getPoints());
     }
 
     public Color getColor() {
@@ -45,12 +83,10 @@ public final class Curve3D extends Shape3D {
 
     @Override
     public void render(Graphics2D g2d) {
-        if (!isVisible)
-            return;
         var ps = new ArrayList<Point2D>();
         points.forEach(p -> ps.add(new Point2D(p.x, p.y)));
         g2d.setStroke(new BasicStroke(thickness));
-        Graph2DCanvas.typicalPlotter(ps, color, cs::screenX, cs::screenY, g2d);
+        Graph2DCanvas.typicalPlotter(ps, color, cs, g2d);
         super.render(g2d);
     }
 }

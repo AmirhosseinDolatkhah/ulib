@@ -1,9 +1,8 @@
-package visualization.shapes.shapes3d;
+package visualization.shapes.shape3d;
 
+import jmath.datatypes.functions.Function;
 import jmath.datatypes.functions.Mapper3D;
 import jmath.datatypes.tuples.Point3D;
-import utils.EnArrayList;
-import utils.Utils;
 import visualization.canvas.CoordinatedScreen;
 import visualization.canvas.Render;
 
@@ -13,7 +12,7 @@ import java.util.*;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class Shape3D implements Render, Comparable<Shape3D>, Serializable {
+public class Shape3D implements Render, Comparable<Shape3D>, Serializable, Function<Object, Object> {
     protected final CoordinatedScreen cs;
     protected final ArrayList<Point3D> points;
     protected final List<Shape3D> components;
@@ -22,6 +21,7 @@ public class Shape3D implements Render, Comparable<Shape3D>, Serializable {
     protected boolean isRotatable;
     protected Point3D currentAngle;
     protected List<Runnable> ticks;
+    protected Labeled label;
 
     public Shape3D(CoordinatedScreen cs) {
         this.cs = cs;
@@ -32,6 +32,7 @@ public class Shape3D implements Render, Comparable<Shape3D>, Serializable {
         isVisible = true;
         doTick = true;
         isRotatable = true;
+        label = () -> null;
     }
 
     public Shape3D() {
@@ -108,7 +109,8 @@ public class Shape3D implements Render, Comparable<Shape3D>, Serializable {
         return res;
     }
 
-    public boolean isVisible() {
+    @Override
+    public final boolean isVisible() {
         return isVisible;
     }
 
@@ -158,6 +160,14 @@ public class Shape3D implements Render, Comparable<Shape3D>, Serializable {
         setPos(pos.x, pos.y, pos.z);
     }
 
+    public String getLabel() {
+        return label.getLabel();
+    }
+
+    public void setLabel(Labeled label) {
+        this.label = label;
+    }
+
     @Deprecated // problem in removing common points of components
     public void removeComponents(int... indexes) {
         for (var i : indexes) {
@@ -166,16 +176,24 @@ public class Shape3D implements Render, Comparable<Shape3D>, Serializable {
         }
     }
 
+    @Override
+    public Object valueAt(Object o) {
+        return null;
+    }
+
     @Override // There is a problem in sorting
     public void render(Graphics2D g2d) {
-        if (!isVisible)
-            return;
         try {
             Collections.sort(components);
-            for (var c : components)
-                c.render(g2d);
+            components.forEach(c -> c.render(g2d));
         } catch (Exception e) {
             e.printStackTrace();
+        }
+        if (label.getLabel() != null) {
+            var c = cs.screen(getCenter());
+            g2d.setColor(Color.GREEN);
+            g2d.setFont(new Font("serif", Font.PLAIN, 9));
+            g2d.drawString(label.getLabel(), c.x, c.y);
         }
     }
 
@@ -193,5 +211,10 @@ public class Shape3D implements Render, Comparable<Shape3D>, Serializable {
     @Override
     public int compareTo(Shape3D o) {
         return Double.compare(getCenter().z, o.getCenter().z);
+    }
+
+    @FunctionalInterface
+    public interface Labeled {
+        String getLabel();
     }
 }

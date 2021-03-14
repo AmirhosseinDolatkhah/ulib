@@ -1,4 +1,4 @@
-package visualization.shapes.shapes3d;
+package visualization.shapes.shape3d;
 
 import jmath.datatypes.functions.*;
 import jmath.datatypes.tuples.Point2D;
@@ -6,6 +6,7 @@ import jmath.datatypes.tuples.Point3D;
 import jmath.functions.utils.Sampling;
 import utils.Utils;
 import visualization.canvas.CoordinatedScreen;
+import visualization.canvas.Graph3DCanvas;
 import visualization.model.OBJHandler;
 import visualization.render3D.shading.LightSource;
 import visualization.render3D.shading.Shader;
@@ -18,17 +19,18 @@ import java.util.List;
 import static java.lang.Math.*;
 
 @SuppressWarnings("unused")
-public class Area extends Shape3D implements Function<Integer, Point3D> {
+public class Area extends Shape3D {
     private Color color;
     private final int numOfSides;
     private Point3D xBound;
     private Point3D yBound;
-
+    private Surface[] surfaces;
     private Shader shader;
 
     public Area(CoordinatedScreen canvas, Color color, boolean isFill, float thickness,
                 double xL, double xU, double yL, double yU, double deltaX, double deltaY, Surface... surfaces) {
         super(canvas);
+        this.surfaces = surfaces;
         this.color = color;
         var domain = Sampling.sampleOf2DRectangularRegion(xL, xU, yL, yU, deltaX, deltaY);
         for (var s : surfaces)
@@ -53,15 +55,20 @@ public class Area extends Shape3D implements Function<Integer, Point3D> {
         yBound = new Point3D(yL, yU, deltaY);
     }
 
+    public Area(CoordinatedScreen cs, ColorSetter colorSetter, double xL, double xU, double yL, double yU, double deltaX, double deltaY, Surface... surfaces) {
+        this(cs, Utils.randomColor(), true, 1f, xL, xU, yL, yU, deltaX, deltaY, surfaces);
+        components.stream().filter(FlatSurface.class::isInstance).forEach(e -> ((FlatSurface) e).setColor(colorSetter.colorOf((FlatSurface) e)));
+    }
+
     public Area(List<Point3D> points, FlatSurface... squares) {
         super(squares[0].getCs());
         components.addAll(Arrays.asList(squares));
         this.points.addAll(points);
         numOfSides = squares.length;
         shader = new Shader(
-                new LightSource(new Point3D(1, 1, 1), Color.RED, 0.1)
-//                new LightSource(new Point3D(-1, -1, 1), Color.GREEN, 0.1)
-//                new LightSource(new Point3D(-5, -10, 5), Color.BLUE, 0.2)
+                new LightSource(new Point3D(1, 1, 1), Color.RED, 0.1),
+                new LightSource(new Point3D(-1, -1, 1), Color.GREEN, 0.1),
+                new LightSource(new Point3D(-5, -10, 5), Color.BLUE, 0.2)
         );
         shader.shade(this);
     }
@@ -91,6 +98,10 @@ public class Area extends Shape3D implements Function<Integer, Point3D> {
         this(canvas, color, true, 2, xL, xU, yL, yU, deltaX, deltaY, Surface.surfaceOfRevolution(arc));
     }
 
+    public Area(CoordinatedScreen cs) {
+        this(cs, Color.RED, true, 2f, 0, 0, 0, 0, 0, 0);
+    }
+
     public Shader getShader() {
         return shader;
     }
@@ -112,9 +123,7 @@ public class Area extends Shape3D implements Function<Integer, Point3D> {
     }
 
     public void setFill(boolean isFill) {
-        for (var c : components)
-            if (c instanceof FlatSurface)
-                ((FlatSurface) c).setFilled(isFill);
+        components.stream().filter(e -> e instanceof FlatSurface).forEach(e -> ((FlatSurface) e).setFilled(isFill));
     }
 
     private FlatSurface getFirstFlatSurface() {
@@ -126,17 +135,12 @@ public class Area extends Shape3D implements Function<Integer, Point3D> {
 
     public void setColor(Color color) {
         this.color = color;
-        components.forEach(e -> {
-            if (e instanceof FlatSurface)
-                ((FlatSurface) e).setColor(color);
-        });
+        components.stream().filter(e -> e instanceof FlatSurface).forEach(e -> ((FlatSurface) e).setFixedColor(color));
+        shader.shade(this);
     }
 
     public void setThickness(float thickness) {
-        components.forEach(e -> {
-            if (e instanceof FlatSurface)
-                ((FlatSurface) e).setThickness(thickness);
-        });
+        components.stream().filter(e -> e instanceof FlatSurface).forEach(e -> ((FlatSurface) e).setThickness(thickness));
     }
 
     public float getThickness() {
@@ -180,27 +184,50 @@ public class Area extends Shape3D implements Function<Integer, Point3D> {
     }
 
     public void setLowBoundX(double xL) {
-
+        xBound.x = xL;
+        reset();
     }
 
     public void setUpBoundX(double xU) {
-
+        xBound.y = xU;
+        reset();
     }
 
     public void setDeltaX(double deltaX) {
-
+        xBound.z = deltaX;
+        reset();
     }
 
     public void setLowBoundY(double yL) {
+        yBound.x = yL;
+        reset();
+    }
 
+    private void reset() {
+        components.clear();
+        var newArea = new Area(cs, getColor(), isFilled(), getThickness(), getLowBoundX(), getUpBoundX(), getLowBoundY(), getUpBoundY(), getDeltaX(), getDeltaY(), surfaces);
+        components.addAll(newArea.getComponents());
+        points.clear();
+        points.addAll(newArea.getPoints());
+        if (cs instanceof Graph3DCanvas)
+            rotate(new Point3D(),
+                    ((Graph3DCanvas) cs).getRotationAroundCenter().x,
+                    ((Graph3DCanvas) cs).getRotationAroundCenter().y,
+                    ((Graph3DCanvas) cs).getRotationAroundCenter().z);
     }
 
     public void setUpBoundY(double yU) {
-
+        yBound.y = yU;
+        reset();
     }
 
     public void setDeltaY(double deltaY) {
+        yBound.z = deltaY;
+        reset();
+    }
 
+    public void colorSet(ColorSetter colorSetter) {
+        components.stream().filter(FlatSurface.class::isInstance).forEach(e -> ((FlatSurface) e).setColor(colorSetter.colorOf((FlatSurface) e)));
     }
 
     public static Area cube(CoordinatedScreen canvas, Point3D center, double sideLen) {
@@ -216,14 +243,43 @@ public class Area extends Shape3D implements Function<Integer, Point3D> {
                 for (var hs3 : hsl)
                     ps[counter++] = new Point3D(xc + hs1, yc + hs2, zc + hs3);
 
+                var color = Utils.randomColor();
         return new Area(new ArrayList<>(Arrays.asList(ps)),
-                new FlatSurface(canvas, Utils.randomColor(), ps[4], ps[5], ps[7], ps[6]),
-                new FlatSurface(canvas, Utils.randomColor(), ps[0], ps[2], ps[6], ps[4]),
-                new FlatSurface(canvas, Utils.randomColor(), ps[1], ps[3], ps[7], ps[5]),
-                new FlatSurface(canvas, Utils.randomColor(), ps[1], ps[5], ps[4], ps[0]),
-                new FlatSurface(canvas, Utils.randomColor(), ps[3], ps[7], ps[6], ps[2]),
-                new FlatSurface(canvas, Utils.randomColor(), ps[1], ps[3], ps[2], ps[0])
+                new FlatSurface(canvas, color, ps[4], ps[5], ps[7], ps[6]),
+                new FlatSurface(canvas, color.darker(), ps[0], ps[2], ps[6], ps[4]),
+                new FlatSurface(canvas, color.brighter(), ps[1], ps[3], ps[7], ps[5]),
+                new FlatSurface(canvas, color, ps[1], ps[5], ps[4], ps[0]),
+                new FlatSurface(canvas, color.darker(), ps[3], ps[7], ps[6], ps[2]),
+                new FlatSurface(canvas, color.brighter(), ps[1], ps[3], ps[2], ps[0])
         );
+    }
+
+    public static Area cubeBorder(CoordinatedScreen cs, Point3D center, Color color, double sideLen) {
+        var hsl = new double[] {-sideLen * sqrt(3) / 2, sideLen * sqrt(3) / 2}; // half of digLen
+        var xc = center.x;
+        var yc = center.y;
+        var zc = center.z;
+
+        var ps = new Point3D[8];
+        int counter = 0;
+        for (var hs1 : hsl)
+            for (var hs2 : hsl)
+                for (var hs3 : hsl)
+                    ps[counter++] = new Point3D(xc + hs1, yc + hs2, zc + hs3);
+
+        return new Area(new ArrayList<>(Arrays.asList(ps)),
+                new FlatSurface(cs, false, color, ps[4], ps[5], ps[7], ps[6]),
+                new FlatSurface(cs, false, color, ps[0], ps[2], ps[6], ps[4]),
+                new FlatSurface(cs, false, color, ps[1], ps[3], ps[7], ps[5]),
+                new FlatSurface(cs, false, color, ps[1], ps[5], ps[4], ps[0]),
+                new FlatSurface(cs, false, color, ps[3], ps[7], ps[6], ps[2]),
+                new FlatSurface(cs, false, color, ps[1], ps[3], ps[2], ps[0])
+        ) {
+            @Override
+            public Point3D getCenter() {
+                return new Point3D(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
+            }
+        };
     }
 
     public static Area sphere(CoordinatedScreen canvas, Color color, Point3D center, double radius) {
@@ -260,9 +316,9 @@ public class Area extends Shape3D implements Function<Integer, Point3D> {
         shader.shade(this);
     }
 
-    @Override
-    public Integer valueAt(Point3D point3D) {
-        return null;
+    @FunctionalInterface
+    private interface ColorSetter {
+        Color colorOf(FlatSurface f);
     }
 }
 

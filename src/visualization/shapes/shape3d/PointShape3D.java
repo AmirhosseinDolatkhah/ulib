@@ -1,4 +1,4 @@
-package visualization.shapes.shapes3d;
+package visualization.shapes.shape3d;
 
 import jmath.datatypes.tuples.Point3D;
 import visualization.canvas.CoordinatedScreen;
@@ -93,7 +93,7 @@ public class PointShape3D extends Shape3D {
 
     @Override
     public void render(Graphics2D g2d) {
-        if (!isVisible)
+        if (!isVisible || !inViewPort())
             return;
 //        if (modelMoverActivated)
 //            mover.render(g2d);
@@ -105,6 +105,8 @@ public class PointShape3D extends Shape3D {
 //            g2d.drawOval(cs.screenX(pos.x - radius), cs.screenY(pos.y - radius),
 //                    cs.screenX(2 * radius), cs.screenY(2 * radius));
 //        }
+        g2d.fillOval(cs.screenX(pos.x - radius), cs.screenY(pos.y + radius),
+                        (int) (2 * radius), (int) (2 * radius));
     }
 
     @Override

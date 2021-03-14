@@ -65,14 +65,14 @@ public class SortableTuple<T extends Comparable<? super T>> implements Serializa
 
     public Point2D asPoint2D() {
         if (dimension() < 2 || !(elements.get(0) instanceof Double) || !(elements.get(1) instanceof Double))
-            return Point2D.NaN;
+            throw new RuntimeException("AHD:: Not suitable dimension");
         return new Point2D((Double) elements.get(0), (Double) elements.get(1));
     }
 
     public Point3D asPoint3D() {
         if (dimension() < 3 || !(elements.get(0) instanceof Double) ||
                 !(elements.get(1) instanceof Double) || !(elements.get(2) instanceof Double))
-            return Point3D.NaN;
+            throw new RuntimeException("AHD:: Not suitable dimension");
         return new Point3D((Double) elements.get(0), (Double) elements.get(1), (Double) elements.get(2));
     }
 }

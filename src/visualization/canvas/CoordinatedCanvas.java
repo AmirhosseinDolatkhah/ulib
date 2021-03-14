@@ -2,13 +2,14 @@ package visualization.canvas;
 
 import com.sun.management.OperatingSystemMXBean;
 import jmath.datatypes.tuples.Point2D;
+import jmath.datatypes.tuples.Point3D;
 import swingutils.MainFrame;
+import utils.inputmanagers.KeyManager;
+import visualization.render3D.camera.Camera;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
+import java.awt.event.*;
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,6 +24,7 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
     private boolean showAxis;
     private boolean showMousePos;
     protected boolean isDark;
+    protected final Camera camera;
 
     protected double xScale;
     protected double yScale;
@@ -43,6 +45,7 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
         if (setKeyListener)
             handleKeyListener();
         addRender(this::drawGrid, this::drawAxis);
+        camera = new Camera(this,0, 0, 0);
     }
 
     public CoordinatedCanvas() {
@@ -63,6 +66,8 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
                     shiftX = 0;
                     xScale = 100;
                     yScale = 100;
+                    camera.setPos(0, 0, 0);
+                    camera.setAngle(0, 0, 0);
                     repaint();
                 }
 
@@ -88,9 +93,9 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
             @Override
             public void mouseDragged(MouseEvent e) {
                 if (!e.isAltDown() && !e.isControlDown() && !e.isShiftDown()) {
-                    shiftX += mousePoint.x - e.getX();
-                    shiftY += mousePoint.y - e.getY();
-                    repaint();
+                    var dx = mousePoint.x - e.getX();
+                    var dy = mousePoint.y - e.getY();
+                    moveOnPlane(dx, dy);
                 }
                 mousePoint = e.getPoint();
             }
@@ -100,84 +105,45 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
             public void mouseWheelMoved(MouseWheelEvent e) {
                 double changeFactor = 1 - e.getPreciseWheelRotation() * 0.1;
                 var mp = new Point2D(coordinateX(e.getX()), coordinateY(e.getY()));
-                xScale *= changeFactor;
-                yScale *= changeFactor;
-                shiftX += screenX(mp.x) - e.getX();
-                shiftY += screenY(mp.y) - e.getY();
-                xScale = Math.max(xScale, Double.MIN_VALUE);
-                yScale = Math.max(yScale, Double.MIN_VALUE);
-                repaint();
+                if (e.isControlDown()) {
+                    camera.move(0, 0, (1-changeFactor) * 3);
+                    repaint();
+                } else {
+                    xScale *= changeFactor;
+                    yScale *= changeFactor;
+                    var dx = screenX(mp.x) - e.getX();
+                    var dy = screenY(mp.y) - e.getY();
+                    xScale = Math.max(xScale, Double.MIN_VALUE);
+                    yScale = Math.max(yScale, Double.MIN_VALUE);
+//                    camera.move(coordinateXLen(dx), coordinateYLen(dy), 0);
+//                    shiftX += dx;
+//                    shiftY += dy;
+                    moveOnPlane(dx, dy);
+                }
             }
         });
     }
 
     private void handleKeyListener() {
-        //        Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
-        //            switch (((KeyEvent) event).getKeyCode()) {
-        //                case KeyEvent.VK_EQUALS:
-        //                    if (((KeyEvent) event).isControlDown()) {
-        //                        xScale = Math.max(xScale, Double.MIN_VALUE);
-        //                        yScale = Math.max(yScale, Double.MIN_VALUE);
-        //                        xScale *= 1.1;
-        //                        yScale *= 1.1;
-        //                    } else if (((KeyEvent) event).isShiftDown()) {
-        //                        rotationAngle += 0.1;
-        //                    }
-        //                    break;
-        //                case KeyEvent.VK_MINUS:
-        //                    if (((KeyEvent) event).isControlDown()) {
-        //                        xScale *= 0.9;
-        //                        yScale *= 0.9;
-        //                    } else if (((KeyEvent) event).isShiftDown()) {
-        //                        rotationAngle -= 0.1;
-        //                    }
-        //                    break;
-        //                case KeyEvent.VK_A: case KeyEvent.VK_LEFT: shiftX -= xScale / 5; break;
-        //                case KeyEvent.VK_D: case KeyEvent.VK_RIGHT: shiftX += xScale / 5; break;
-        //                case KeyEvent.VK_UP: shiftY -= yScale / 5; break;
-        //                case KeyEvent.VK_DOWN: shiftY += yScale / 5; break;
-        //                case KeyEvent.VK_W: xScale += xScale / 10; yScale += yScale / 10; break;
-        //                case KeyEvent.VK_S: xScale -= xScale / 10; yScale -= yScale / 10; break;
-        //            }
-        //            xScale = Math.max(xScale, Double.MIN_VALUE);
-        //            yScale = Math.max(yScale, Double.MIN_VALUE);
-        //            repaint();
-        //        }, AWTEvent.KEY_EVENT_MASK);
-        //
-        //        addKeyListener(new KeyAdapter() {
-        //            @Override
-        //            public void keyTyped(KeyEvent e) {
-        //                switch (e.getKeyCode()) {
-        //                case KeyEvent.VK_EQUALS:
-        //                    if (e.isControlDown()) {
-        //                        xScale = Math.max(xScale, Double.MIN_VALUE);
-        //                        yScale = Math.max(yScale, Double.MIN_VALUE);
-        //                        xScale *= 1.1;
-        //                        yScale *= 1.1;
-        //                    } else if (e.isShiftDown()) {
-        //                        rotationAngle += 0.1;
-        //                    }
-        //                    break;
-        //                case KeyEvent.VK_MINUS:
-        //                    if (e.isControlDown()) {
-        //                        xScale *= 0.9;
-        //                        yScale *= 0.9;
-        //                    } else if (e.isShiftDown()) {
-        //                        rotationAngle -= 0.1;
-        //                    }
-        //                    break;
-        //                case KeyEvent.VK_A: case KeyEvent.VK_LEFT: shiftX -= xScale / 5; break;
-        //                case KeyEvent.VK_D: case KeyEvent.VK_RIGHT: shiftX += xScale / 5; break;
-        //                case KeyEvent.VK_UP: shiftY -= yScale / 5; break;
-        //                case KeyEvent.VK_DOWN: shiftY += yScale / 5; break;
-        //                case KeyEvent.VK_W: xScale += xScale / 10; yScale += yScale / 10; break;
-        //                case KeyEvent.VK_S: xScale -= xScale / 10; yScale -= yScale / 10; break;
-        //            }
-        //            xScale = Math.max(xScale, Double.MIN_VALUE);
-        //            yScale = Math.max(yScale, Double.MIN_VALUE);
-        //            repaint();
-        //            }
-        //        });
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_W -> camera.move(0, 0, -0.2);
+                    case KeyEvent.VK_S -> camera.move(0, 0, 0.2);
+                    case KeyEvent.VK_A -> moveOnPlane(-5, 0);
+                    case KeyEvent.VK_D -> moveOnPlane(5, 0);
+                    case KeyEvent.VK_SPACE -> moveOnPlane(0, 5);
+                    case KeyEvent.VK_SHIFT -> moveOnPlane(0, -5);
+                    case KeyEvent.VK_CONTROL + KeyEvent.VK_PLUS -> zoom(1.1);
+                    case KeyEvent.VK_CONTROL + KeyEvent.VK_MINUS -> zoom(0.9);
+                }
+                if (e.isControlDown())
+                    zoom(1 + (e.getKeyCode() == KeyEvent.VK_EQUALS ? 0.1 : e.getKeyCode() == KeyEvent.VK_MINUS ? -0.1 : 0));
+                repaint();
+            }
+        });
+        Toolkit.getDefaultToolkit().addAWTEventListener(e -> getKeyListeners()[0].keyTyped((KeyEvent) e), AWTEvent.KEY_EVENT_MASK);
     }
 
     protected Color getAxisColor() {
@@ -369,6 +335,23 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
         return (int) (getHeight() / 2.0 - value * yScale - shiftY);
     }
 
+    @Override
+    public final Camera camera() {
+        return camera;
+    }
+
+    @Override
+    public Point screen(Point2D p) {
+        return new Point(screenX(p.x), screenY(p.y));
+    }
+
+    @Override
+    public Point screen(Point3D p) {
+        double dist = Math.sqrt(p.x*p.x + p.y*p.y) * Math.abs(20/(10+camera.getZ()-p.z));
+        double theta = Math.atan2(p.y, p.x);
+        return new Point(screenX(dist * Math.cos(theta)), screenY(dist * Math.sin(theta)));
+    }
+
     public final void zoom(double factor) {
         xScale *= factor;
         yScale *= factor;
@@ -415,6 +398,7 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
 
     public void setShiftX(int shiftX) {
         this.shiftX = shiftX;
+        camera.setX(coordinateX(shiftX));
         repaint();
     }
 
@@ -429,6 +413,7 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
 
     public void setShiftY(int shiftY) {
         this.shiftY = shiftY;
+        camera.setY(coordinateY(shiftY));
         repaint();
     }
 
@@ -456,16 +441,26 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
     public void moveOnPlane(double dx, double dy) {
         shiftX += dx * xScale;
         shiftY -= dy * yScale;
+        camera.move(dx, dy, 0);
+        repaint();
+    }
+
+    public void moveOnPlane(int dx, int dy) {
+        shiftX += dx;
+        shiftY += dy;
+        camera.move(dx / xScale, dy / yScale, 0);
         repaint();
     }
 
     public void setShiftX(double shiftX) {
         setShiftX(screenX(shiftX));
+        camera.setX(shiftX);
         repaint();
     }
 
     public void setShiftY(double shiftY) {
         setShiftY(screenY(shiftY));
+        camera.setY(shiftY);
         repaint();
     }
 
@@ -481,7 +476,7 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
         g.drawString("ScaleX: " + round(xScale, 2) + ", ScaleY: " + round(yScale, 2), 0, (int) (infoFont.getSize() * 2.1));
         try {
             g.drawString("MouseClicked(Pixels): (" + mousePoint.x + ", " + mousePoint.y +
-                    "), MouseClicked(Coordinated): (" + round(coordinateX(mousePoint.x), 2) + ", " + round(coordinateY(mousePoint.y), 2) + ")", 0, (int) (infoFont.getSize() * 3.2));
+                    "), MouseClicked(Coordinated): (" + round(coordinateX(mousePoint.x), 2) + ", " + round(coordinateY(mousePoint.y), 2) + "), Z: " + round(camera.getZ(), 2), 0, (int) (infoFont.getSize() * 3.2));
         } catch (NullPointerException ignore) {}
         if (!isRunning())
             return;

@@ -47,9 +47,9 @@ public class TernaryFunction implements Function4D {
 
     public Mapper2D asMapper2D(double zFixValue) {
         if (allDimensions.length > 1)
-            return p -> new Point2D(
-                    allDimensions[0].valueAt(new Point3D(p, zFixValue)),
-                    allDimensions[1].valueAt(new Point3D(p, zFixValue)));
+            return (x, y) -> new Point2D(
+                    allDimensions[0].valueAt(new Point3D(x, y, zFixValue)),
+                    allDimensions[1].valueAt(new Point3D(x, y, zFixValue)));
         return Mapper2D.NaN;
     }
 
@@ -66,7 +66,7 @@ public class TernaryFunction implements Function4D {
             return t -> new Point3D(
                     allDimensions[0].valueAt(t, yFixValue, zFixValue),
                     allDimensions[1].valueAt(t, yFixValue, zFixValue),
-                    allDimensions[1].valueAt(t, yFixValue, zFixValue));
+                    allDimensions[2].valueAt(t, yFixValue, zFixValue));
         return Arc3D.NaN;
     }
 

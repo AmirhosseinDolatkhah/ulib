@@ -1,8 +1,8 @@
 package visualization.render3D.shading;
 
 import jmath.datatypes.tuples.Point3D;
-import visualization.shapes.shapes3d.FlatSurface;
-import visualization.shapes.shapes3d.Shape3D;
+import visualization.shapes.shape3d.FlatSurface;
+import visualization.shapes.shape3d.Shape3D;
 
 import java.awt.*;
 import java.io.Serializable;

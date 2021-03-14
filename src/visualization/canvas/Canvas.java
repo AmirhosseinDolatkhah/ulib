@@ -6,6 +6,7 @@ import utils.Utils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -13,7 +14,7 @@ import java.lang.management.ManagementFactory;
 import java.util.ConcurrentModificationException;
 
 @SuppressWarnings("unused")
-public class Canvas extends JLayeredPane implements Runnable {
+public class Canvas extends JPanel implements Runnable {
     public static final int DEFAULT_REDRAW_DELAY = 4;
     private static int numberOfPanel = 0;
     private final Timer redrawTimer;
@@ -26,8 +27,6 @@ public class Canvas extends JLayeredPane implements Runnable {
     private double delta;
     private long timer;
     private long loopCounter;
-    private long ticksCounter;
-    private long renderCounter;
     private Color infoColor;
     protected Font infoFont;
     private boolean showInfo;
@@ -45,8 +44,6 @@ public class Canvas extends JLayeredPane implements Runnable {
         setName("Canvas: Id=" + numberOfPanel++);
         backGround = Color.DARK_GRAY.darker();
         loopCounter = 0;
-        ticksCounter = 0;
-        renderCounter = 0;
         delta = 0;
         timer = 1;
         bgImage = null;
@@ -55,15 +52,25 @@ public class Canvas extends JLayeredPane implements Runnable {
         showInfo = true;
         showBgImg = true;
         setFps(30);
-        stop();
+        setDoubleBuffered(true);
 
         addMouseListener(new MouseAdapter() {
+            private boolean isRunning = false;
+
             @Override
             public void mousePressed(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON1 && getComponentCount() != 0 && e.isShiftDown())
+                isRunning = isRunning();
+                stop();
+                if (e.getButton() == MouseEvent.BUTTON1 && getComponentCount() != 0 && !e.isControlDown())
                     removeSettingPanel();
-                if (e.getButton() == MouseEvent.BUTTON3 && getComponentCount() == 0 && e.isShiftDown())
+                if (e.getButton() == MouseEvent.BUTTON3 && getComponentCount() == 0 && !e.isControlDown())
                     addSettingPanel();
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (isRunning)
+                    start();
             }
         });
     }
@@ -81,6 +88,8 @@ public class Canvas extends JLayeredPane implements Runnable {
         var setInfoFontSize = new JButton("Info Font Size");
         var capture = new JButton("Capture");
         var tooltip = new JButton("TooltipText");
+        var resetRenderManager = new JButton("ResetRenderManager");
+        var tickAndShow = new JButton("Tick and show");
 
         settingPanel.add(fps);
         settingPanel.add(new JLabel(getName(), JLabel.CENTER));
@@ -94,6 +103,8 @@ public class Canvas extends JLayeredPane implements Runnable {
         settingPanel.add(setBgImg);
         settingPanel.add(capture);
         settingPanel.add(tooltip);
+        settingPanel.add(resetRenderManager);
+        settingPanel.add(tickAndShow);
 
         start.addActionListener(e -> start());
         stop.addActionListener(e -> stop());
@@ -106,7 +117,15 @@ public class Canvas extends JLayeredPane implements Runnable {
         tooltip.addActionListener(e -> setToolTipText(JOptionPane.showInputDialog(Canvas.this, "Enter Tooltip Text of Canvas: (If any exception occurred nothing will change)", getToolTipText())));
         setInfoFontSize.addActionListener(e -> setInfoFont(new Font("serif", Font.BOLD, Integer.parseInt(JOptionPane.showInputDialog(Canvas.this, "Enter size of info font: (If any exception occurred nothing will change)", infoFont.getSize())))));
         capture.addActionListener(e -> Utils.saveJComponentImage(System.nanoTime() + "", Canvas.this));
-
+        resetRenderManager.addActionListener(e -> {
+            renderManager.clear();
+            removeSettingPanel();
+            addSettingPanel();
+        });
+        tickAndShow.addActionListener(e -> {
+            renderManager.tick();
+            repaint();
+        });
         settingPanel.setBorder(BorderFactory.createTitledBorder("Plain Canvas"));
         return settingPanel;
     }
@@ -147,15 +166,13 @@ public class Canvas extends JLayeredPane implements Runnable {
         this.fps = fps;
         redrawTimer.setDelay(fps > 50 ? 0 : DEFAULT_REDRAW_DELAY);
         resetLoopInfo();
-        start();
     }
 
     private void resetLoopInfo() {
         timer = 1;
         delta = 0;
         loopCounter = 0;
-        ticksCounter = 0;
-        renderCounter = 0;
+        renderManager.resetCounters();
         timePerTick = 1_000_000_000 / (double) fps;
     }
 
@@ -183,7 +200,7 @@ public class Canvas extends JLayeredPane implements Runnable {
     }
 
     public long getTicksCounter() {
-        return ticksCounter;
+        return renderManager.getTickCounter();
     }
 
     public double getTimePerTick() {
@@ -191,15 +208,15 @@ public class Canvas extends JLayeredPane implements Runnable {
     }
 
     public long getRealFps() {
-        return renderCounter * 1_000_000_000 / timer + 1;
+        return renderManager.getRenderCounter() * 1_000_000_000L / timer + 1;
     }
 
     public long getRealTps() {
-        return ticksCounter * 1_000_000_000 / timer + 1;
+        return renderManager.getTickCounter() * 1_000_000_000L / timer + 1;
     }
 
     public long getLps() {
-        return loopCounter * 1_000_000_000 / timer + 1;
+        return loopCounter * 1_000_000_000L / timer + 1;
     }
 
     public boolean isRunning() {
@@ -207,7 +224,7 @@ public class Canvas extends JLayeredPane implements Runnable {
     }
 
     public long getRenderCounter() {
-        return renderCounter;
+        return renderManager.getRenderCounter();
     }
 
     public Color getInfoColor() {
@@ -271,7 +288,6 @@ public class Canvas extends JLayeredPane implements Runnable {
         if (g == null)
             return;
         var g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         if (bgImage == null || !showBgImg) {
             g2d.setColor(backGround);
@@ -290,14 +306,16 @@ public class Canvas extends JLayeredPane implements Runnable {
         g2d.setFont(infoFont);
         g2d.setColor(infoColor);
         if (!isRunning()) {
-            g2d.drawString("Not Dynamic", 0, 10);
+            g2d.drawString("Not Dynamic, Tick: " + getTicksCounter() + ", Render: " + getRenderCounter(), 0, 10);
             return;
         }
+
 
         g2d.drawString(
                 "FPS: " + getRealFps() +
                         ", TPS: " + getRealTps() +
-                        ", CPU: " + Utils.round(((OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean()).getProcessCpuLoad() * 100, 2) + "%"
+                        ", CPU: " + Utils.round(((OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean()).getProcessCpuLoad() * 100, 2) +
+                        "%, Tick: " + getTicksCounter() + ", Render: " + getRenderCounter() + ", LTT: " + renderManager.numOfAliveTickThreads()
                 , 0, (int) (infoFont.getSize() * 0.8)
         );
     }
@@ -313,13 +331,10 @@ public class Canvas extends JLayeredPane implements Runnable {
         while (delta >= 1) {
             renderManager.tick();
             delta--;
-            ticksCounter++;
         }
 
-        if (flag) {
+        if (flag)
             repaint();
-            renderCounter++;
-        }
 
         loopCounter++;
     }

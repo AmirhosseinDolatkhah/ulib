@@ -255,7 +255,7 @@ public class Graph2DCanvas extends CoordinatedCanvas {
                     (double) p.get(LOW_BOUND)), Math.min(coordinateX(getWidth()), (double) p.get(UP_BOUND)),
                     1 / (getXScale() * (double) p.get(ACCURACY_RATE)), (int) p.get(NUM_OF_THREADS));
             p.put(ALL_POINTS, sample);
-            typicalPlotter(sample, (Color) p.get(COLOR), this::screenX, this::screenY, g2d);
+            typicalPlotter(sample, (Color) p.get(COLOR), this, g2d);
         }
 
         for (var arc : arcs.keySet()) {
@@ -268,14 +268,14 @@ public class Graph2DCanvas extends CoordinatedCanvas {
             var sample = Sampling.multiThreadSampling(arc, (double) p.get(LOW_BOUND), (double) p.get(UP_BOUND),
                     (double) p.get(DELTA), (int) p.get(NUM_OF_THREADS));
             p.put(ALL_POINTS, sample);
-            typicalPlotter(sample, (Color) p.get(COLOR), this::screenX, this::screenY, g2d);
+            typicalPlotter(sample, (Color) p.get(COLOR), this, g2d);
         }
     }
 
-    public static void typicalPlotter(java.util.List<Point2D> sample, Color c,
-            Function<Integer, Double> screenX, Function<Integer, Double> screenY, Graphics2D g2d) {
+    public static void typicalPlotter(List<Point2D> sample, Color c,
+            CoordinatedScreen cs, Graphics2D g2d) {
         var vps = new ArrayList<>(sample);
-        java.util.List<Point2D> nanPoints = new ArrayList<>();
+        List<Point2D> nanPoints = new ArrayList<>();
 
         for (int i = 1; i < sample.size(); i++)
             if (!Double.isFinite(sample.get(i - 1).y))
@@ -299,8 +299,8 @@ public class Graph2DCanvas extends CoordinatedCanvas {
 
                 int counter = 0;
                 for (var p : ps) {
-                    xa[counter] = screenX.valueAt(p.x);
-                    ya[counter++] = screenY.valueAt(p.y);
+                    xa[counter] = cs.screenX(p.x);
+                    ya[counter++] = cs.screenY(p.y);
                 }
 
                 g2d.drawPolyline(xa, ya, xa.length);
@@ -315,7 +315,7 @@ public class Graph2DCanvas extends CoordinatedCanvas {
                 continue;
             g2d.setColor((Color) p.get(COLOR));
             @SuppressWarnings("unchecked")
-            var roots = RootsFinder.bySampling((java.util.List<Point2D>) p.get(ALL_POINTS));
+            var roots = RootsFinder.bySampling((List<Point2D>) p.get(ALL_POINTS));
             for (var r : roots)
                 g2d.fillOval(screenX(r) - 4, screenY(0) - 4, 4 * 2, 4 * 2);
         }
@@ -326,22 +326,22 @@ public class Graph2DCanvas extends CoordinatedCanvas {
                 continue;
             g2d.setColor((Color) p.get(COLOR));
             @SuppressWarnings("unchecked")
-            var roots = RootsFinder.bySampling((java.util.List<Point2D>) p.get(ALL_POINTS));
+            var roots = RootsFinder.bySampling((List<Point2D>) p.get(ALL_POINTS));
             for (var r : roots)
                 g2d.fillOval(screenX(r) - 4, screenY(0) - 4, 4 * 2, 4 * 2);
         }
     }
 
-    public static void flat2DSurfacePlotter(java.util.List<Point2D> vertexes, Color bound, Color inner,
-            Function<Integer, Double> screenX, Function<Integer, Double> screenY, Graphics2D g2d) {
+    public static void flat2DSurfacePlotter(List<Point2D> vertexes, Color bound, Color inner,
+            CoordinatedScreen cs, Graphics2D g2d) {
         var vps = new ArrayList<>(vertexes);
         vps.removeIf(e -> !Double.isFinite(e.x) || !Double.isFinite(e.y));
         int[] xa = new int[vps.size()];
         int[] ya = new int[vps.size()];
         int counter = 0;
         for (var v : vps) {
-            xa[counter] = screenX.valueAt(v.x);
-            ya[counter++] = screenY.valueAt(v.y);
+            xa[counter] = cs.screenX(v.x);
+            ya[counter++] = cs.screenY(v.y);
         }
         g2d.setColor(inner);
         g2d.fillPolygon(xa, ya, xa.length);
@@ -375,7 +375,7 @@ public class Graph2DCanvas extends CoordinatedCanvas {
         }
     }
 
-    private void showPoints(java.util.List<Point2D> points, Color c, Graphics2D g2d) {
+    private void showPoints(List<Point2D> points, Color c, Graphics2D g2d) {
         g2d.setColor(c);
         for (var p : points)
             g2d.fillOval(screenX(p.x) - 4, screenY(p.y) - 4, 4 * 2, 4 * 2);
@@ -415,7 +415,7 @@ public class Graph2DCanvas extends CoordinatedCanvas {
                 continue;
 
             g2d.setStroke(new BasicStroke((float) p.get(THICKNESS), BasicStroke.CAP_SQUARE, BasicStroke.JOIN_ROUND));
-            var sample = (java.util.List<Point2D>) p.get(ALL_POINTS);
+            var sample = (List<Point2D>) p.get(ALL_POINTS);
             sample = Sampling.multiThreadSampling(f, Math.max(coordinateX(0),
                     (double) p.get(LOW_BOUND)), Math.min(coordinateX(getWidth()), (double) p.get(UP_BOUND)),
                     1 / (getXScale() * (double) p.get(ACCURACY_RATE)), (int) p.get(NUM_OF_THREADS));

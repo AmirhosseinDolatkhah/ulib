@@ -3,7 +3,7 @@ package visualization.model;
 import jmath.datatypes.tuples.Point3D;
 import jmath.datatypes.tuples.Point4D;
 import visualization.canvas.CoordinatedScreen;
-import visualization.shapes.shapes3d.FlatSurface;
+import visualization.shapes.shape3d.FlatSurface;
 
 import java.awt.*;
 import java.io.File;
