@@ -10,6 +10,10 @@ public class Camera {
     private double roll, pitch, yaw;
     private final CoordinatedScreen cs;
 
+    // not implemented yet
+    private Point3D pos;
+    private Point3D angles;
+
     public Camera(CoordinatedScreen cs, double x, double y, double z) {
         this.x = x;
         this.y = y;
@@ -91,6 +95,10 @@ public class Camera {
 
     public CoordinatedScreen getCs() {
         return cs;
+    }
+
+    public Point3D getPos() {
+        return new Point3D(x, y, z);
     }
 
     public boolean inViewPort(Point3D p) {

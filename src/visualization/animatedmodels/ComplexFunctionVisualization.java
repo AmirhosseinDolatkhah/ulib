@@ -45,12 +45,12 @@ public class ComplexFunctionVisualization implements Render {
         final var h = cc.getHeight();
         g2d.drawImage(Utils.createImage(w, h, i -> {
             var cn = function.valueAt(cc.coordinateX(i % w), cc.coordinateY(i / w));
-//            return hsl2rgb(cn.phase, 1, 2/Math.PI * Math.atan(cn.absoluteValue)).getRGB();
-            return new Color(
-                    (float) Math.abs(2/PI*atan(cn.realValue)),
-                    (float) Math.abs(2/PI*atan(cn.imaginaryValue)),
-                    0.5f
-            ).getRGB();
+            return hsl2rgb(cn.phase, 1, 2/Math.PI * Math.atan(cn.absoluteValue)).getRGB();
+//            return new Color(
+//                    (float) Math.abs(2/PI*atan(cn.realValue)),
+//                    (float) Math.abs(2/PI*atan(cn.imaginaryValue)),
+//                    0.5f
+//            ).getRGB();
 //            return new Color(
 //                    (float) Math.abs(cn.phase % 1),
 //                    0.5f,

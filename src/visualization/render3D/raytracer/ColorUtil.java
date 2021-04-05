@@ -2,59 +2,47 @@ package visualization.render3D.raytracer;
 
 import swingutils.MainFrame;
 import utils.Utils;
-import utils.supplier.ColorSupplier;
 import visualization.canvas.Graph3DCanvas;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.function.IntBinaryOperator;
-import java.util.function.IntSupplier;
 import java.util.function.IntUnaryOperator;
 
 public final class ColorUtil {
-    public static Color getColor(int x, int y, int z, int nx, int ny, int nz) {
-        return new Color((float) x / nx, (float) y / ny, (float) z / nz);
+
+    public static int gradiantColor(int i, int j, int nx, int ny) {
+        return new Color(
+                Math.abs((float) (i % nx)) / nx,
+                Math.abs((float) (j % ny)) / ny,
+                (float) Math.abs(nx * ny - i * j) / nx / ny,
+                0.5f * (float) Math.abs(i * j) / nx / ny + 0.5f
+        ).getRGB();
     }
 
-    public static Color getColor(int x, int y, int nx, int ny) {
-        return getColor(x, y, 4, nx, ny, 5);
+    public static int gradiantColor(float i, float j) {
+        return new Color(
+                Math.abs(i % 1),
+                Math.abs(j % 1),
+                0.2f/*0.75f*Math.abs(i*j)+0.25f*/
+//                0.18f*(i+j)+0.5f
+        ).getRGB();
     }
 
-    public static ColorCalculator getColorGenerator(IntSupplier width, IntSupplier height) {
-        return new ColorCalculator(width, height);
+    public static int gradiantArcTangentColor(float i, float j) {
+        return new Color(
+                (float) Math.abs(1/Math.PI*(Math.PI/2+Math.atan(i))),
+                (float) Math.abs(1/Math.PI*(Math.PI/2+Math.atan(j))),
+                (float) Math.abs(1/Math.PI*(Math.PI/2+Math.atan(i+j))),
+                0.5f * Math.abs(i * j % 1) + 0.5f
+        ).getRGB();
     }
 
     public static void main(String[] args) {
         var frame = new MainFrame();
         var gp = new Graph3DCanvas();
+        gp.addRender(g2d -> g2d.drawImage(Utils.createImage(gp.getWidth(), gp.getHeight(), i ->
+                gradiantColor(i % gp.getWidth() / (float) gp.getWidth(), (float) i / gp.getWidth() / gp.getHeight()), 0), 0, 0, null));
         frame.add(gp);
-        var cg =  getColorGenerator(gp::getWidth, gp::getHeight);
-        gp.addRender(g -> g.drawImage(Utils.createImage(gp.getWidth(), gp.getHeight(), (IntUnaryOperator) cg, 1), 0, 0, null));
-
         SwingUtilities.invokeLater(frame);
-    }
-
-    protected static class ColorCalculator implements IntUnaryOperator, IntBinaryOperator {
-        private final IntSupplier w;
-        private final IntSupplier h;
-
-        public ColorCalculator(IntSupplier w, IntSupplier h) {
-            this.w = w;
-            this.h = h;
-        }
-
-        @Override
-        public int applyAsInt(int i) {
-            var hh = h.getAsInt();
-            var ww = w.getAsInt();
-
-            return (((i * 128 / ww / hh + 128) & 0xFF) << 24) | (((i / ww) & 0xFF) << 16) |
-                    (((i % ww) & 0xFF) << 8) | (((i * 256 / ww / hh) & 0xFF));
-        }
-
-        @Override
-        public int applyAsInt(int i, int j) {
-            return applyAsInt(i * w.getAsInt() + j);
-        }
     }
 }

@@ -82,6 +82,11 @@ public class Point3D extends SortableTuple<Double> implements Comparable<Point3D
         }
     }
 
+    @Override
+    public double squareOfDistanceFromOrigin() {
+        return x * x + y * y + z * z;
+    }
+
     public Point3D set(Point3D p) {
         x = p.x;
         y = p.y;

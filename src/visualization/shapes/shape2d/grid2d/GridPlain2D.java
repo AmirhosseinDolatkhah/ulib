@@ -9,17 +9,17 @@ import java.awt.*;
 import java.util.Arrays;
 
 public class GridPlain2D implements Render {
-    private boolean isVisible;
-    private boolean drawGrid;
-    private float gridThickness;
-    private Color gridColor;
-    private double tilesWidth;
-    private double tilesHeight;
-    private final int numOfRows;
-    private final int numOfCols;
-    private final Tile2D[][] girdTiles;
-    private final Point2D pos;
-    private CoordinatedScreen cs;
+    protected boolean isVisible;
+    protected boolean drawGrid;
+    protected float gridThickness;
+    protected Color gridColor;
+    protected double tilesWidth;
+    protected double tilesHeight;
+    protected final int numOfRows;
+    protected final int numOfCols;
+    protected final Tile2D[][] gridTiles;
+    protected final Point2D pos;
+    protected CoordinatedScreen cs;
 
     public GridPlain2D(CoordinatedScreen cs, int numOfRows, int numOfCols, Point2D pos) {
         this.numOfRows = numOfRows;
@@ -32,12 +32,12 @@ public class GridPlain2D implements Render {
         gridColor = Color.GRAY;
         this.cs = cs;
         this.pos = pos;
-        girdTiles = new Tile2D[numOfRows][numOfCols];
+        gridTiles = new Tile2D[numOfRows][numOfCols];
         for (int i = numOfRows-1; i >= 0; i--)
             for (int j = 0; j < numOfCols; j++) {
                 int finalI = i;
                 int finalJ = j+1;
-                girdTiles[numOfRows-i-1][j] = new Tile2D(cs, new Point2D(j * tilesWidth + pos.x, i * tilesHeight + pos.y),
+                gridTiles[numOfRows-i-1][j] = new Tile2D(cs, new Point2D(j * tilesWidth + pos.x, i * tilesHeight + pos.y),
                         tilesWidth, tilesHeight, Utils::randomColor, true, () -> String.valueOf(finalI*numOfCols+finalJ));
             }
     }
@@ -54,7 +54,7 @@ public class GridPlain2D implements Render {
         pos.set(x, y);
         for (int i = numOfRows-1; i >= 0; i--)
             for (int j = 0; j < numOfCols; j++)
-                girdTiles[numOfRows-i-1][j].setPos(new Point2D(j * tilesWidth + pos.x, i * tilesHeight + pos.y));
+                gridTiles[numOfRows-i-1][j].setPos(new Point2D(j * tilesWidth + pos.x, i * tilesHeight + pos.y));
     }
 
     public void move(double dx, double dy) {
@@ -118,7 +118,7 @@ public class GridPlain2D implements Render {
     }
 
     public Tile2D getTile(int i, int j) {
-        return girdTiles[i][j];
+        return gridTiles[i][j];
     }
 
     public void setVisible(boolean visible) {
@@ -128,7 +128,7 @@ public class GridPlain2D implements Render {
     public void actOnAllTiles(ActOnTile actOnTile) {
         for (int i = 0; i < numOfRows; i++)
             for (int j = 0; j < numOfCols; j++)
-                actOnTile.act(girdTiles[i][j]);
+                actOnTile.act(gridTiles[i][j]);
     }
 
     private void drawGrid(Graphics2D g2d) {
@@ -146,7 +146,7 @@ public class GridPlain2D implements Render {
 
     @Override
     public void render(Graphics2D g2d) {
-        for (var row : girdTiles)
+        for (var row : gridTiles)
             Arrays.stream(row).forEach(tile -> tile.renderIfInView(g2d));
         drawGrid(g2d);
     }

@@ -88,6 +88,8 @@ public final class Sort {
         System.out.println("-".repeat(20));
     }
 
+    /////////////
+
     public static void main(String[] args) {
 //        checkTimeOfIntArraySort(2_000_000, Sort::mergeSort);
         int[] arr = new int[] {1, 4, 3, 5, 6, 7, 2, 4, 2, 5, 12, 43, 1, 3, 5, 32, 2, 33};
@@ -95,6 +97,8 @@ public final class Sort {
         mergeSort(arr);
         System.out.println(Arrays.toString(arr));
     }
+
+    /////////////
 
     @FunctionalInterface
     private interface SortArrayFunc {

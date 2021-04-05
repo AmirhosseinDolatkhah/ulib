@@ -193,4 +193,9 @@ public class Point2D extends SortableTuple<Double> implements Comparable<Point2D
             case CoordinateY: y = newValue; break;
         }
     }
+
+    @Override
+    public double squareOfDistanceFromOrigin() {
+        return x * x + y * y;
+    }
 }

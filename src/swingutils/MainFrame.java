@@ -1,14 +1,17 @@
 package swingutils;
 
+import utils.StateBase;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings("unused")
-public class MainFrame extends JFrame implements Runnable {
+public class MainFrame extends JFrame implements Runnable, StateBase<String, Container> {
     public static final int DEFAULT_HEIGHT = 720;
     public static final int DEFAULT_WIDTH = DEFAULT_HEIGHT * 16 / 9;
 
@@ -17,12 +20,15 @@ public class MainFrame extends JFrame implements Runnable {
     private boolean isDark;
     private boolean isFullScreen;
 
+    private String currentState;
+
     public MainFrame(String title, boolean dark) {
         super(title);
 
         stateMap = new HashMap<>();
         isDark = dark;
         isFullScreen = false;
+        currentState = "initial";
 
         init();
     }
@@ -252,20 +258,39 @@ public class MainFrame extends JFrame implements Runnable {
         return isDark;
     }
 
+    @Override
+    public String currentState() {
+        return null;
+    }
+
+    @Override
+    public Map<String, Container> stateMap() {
+        return stateMap;
+    }
+
+    @Override
     public void addState(String stateName, Container stateContainer) {
         stateMap.put(stateName, stateContainer);
     }
 
+    @Override
+    @Deprecated
+    public void removeState(String key) {
+        throw new RuntimeException("AHD:: not implemented yet");
+    }
+
+    @Override
     public Container getState(String stateName) {
         return stateMap.get(stateName);
     }
 
     public List<String> getStateNames() {
-        return new ArrayList<>(stateMap.keySet());
+        return stateKeys();
     }
 
-    protected void setState(String stateName) {
-        setContentPane(stateMap.get(stateName));
+    @Override
+    public void setState(String stateName) {
+        setContentPane(stateMap.get(currentState = stateName));
         repaint();
         revalidate();
     }

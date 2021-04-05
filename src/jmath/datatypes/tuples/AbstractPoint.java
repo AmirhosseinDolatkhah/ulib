@@ -12,6 +12,7 @@ public interface AbstractPoint extends Serializable {
     double distanceFromOrigin();
     int numOfCoordinates();
     void setCoordinate(int numOfCoordinate, double newValue);
+    double squareOfDistanceFromOrigin();
     default boolean testAndSet(int numOfCoordinate, double oldValue, double newValue) {
         if (getCoordinate(numOfCoordinate) != oldValue)
             return false;

@@ -1,6 +1,5 @@
 package jmath.datatypes.functions;
 
-//import animation.canvaspanel.CoordinatedCanvasPanel;
 import jmath.datatypes.tuples.Point2D;
 import jmath.datatypes.tuples.Point3D;
 import jmath.functions.utils.Sampling;

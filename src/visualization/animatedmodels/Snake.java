@@ -19,7 +19,7 @@ public class Snake implements Render {
         this.cols = cols;
         this.rows = rows;
         grid = new GridPlain2D(cs, rows, cols);
-        tiles = new TileType[rows*cols];
+        tiles = new TileType[rows * cols];
         init();
     }
 

@@ -76,6 +76,11 @@ public class Point4D extends SortableTuple<Double> implements Comparable<Point4D
         }
     }
 
+    @Override
+    public double squareOfDistanceFromOrigin() {
+        return x * x + y * y + z * z + w * w;
+    }
+
     public Point4D set(Point4D p) {
         x = p.x;
         y = p.y;
