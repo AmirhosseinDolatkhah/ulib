@@ -6,7 +6,6 @@ import utils.Utils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -18,7 +17,6 @@ public class Canvas extends JPanel implements Runnable {
     public static final int DEFAULT_REDRAW_DELAY = 4;
     private static int numberOfPanel = 0;
     private final Timer redrawTimer;
-    private final RenderManager renderManager;
     protected Color backGround;
     private Image bgImage;
     private int fps;
@@ -31,15 +29,18 @@ public class Canvas extends JPanel implements Runnable {
     protected Font infoFont;
     private boolean showInfo;
     private boolean showBgImg;
+    protected final Camera camera;
+    private final boolean created;
 
     public Canvas() {
         redrawTimer = new Timer(DEFAULT_REDRAW_DELAY, e -> this.run());
-        renderManager = new RenderManager();
+        camera = new Camera();
         init();
+        created = true;
     }
 
     private void init() {
-        setLayout(new BorderLayout());
+        super.setLayout(new BorderLayout());
         setPreferredSize(new Dimension(MainFrame.DEFAULT_WIDTH, MainFrame.DEFAULT_HEIGHT));
         setName("Canvas: Id=" + numberOfPanel++);
         backGround = Color.DARK_GRAY.darker();
@@ -106,7 +107,7 @@ public class Canvas extends JPanel implements Runnable {
         settingPanel.add(resetRenderManager);
         settingPanel.add(tickAndShow);
 
-        start.addActionListener(e -> start());
+        start.addActionListener(e -> {start(); camera.resetCounters();});
         stop.addActionListener(e -> stop());
         showInfo.addActionListener(e -> setShowInfo(showInfo.isSelected()));
         showBgImg.addActionListener(e -> setShowBgImg(showBgImg.isSelected()));
@@ -118,12 +119,12 @@ public class Canvas extends JPanel implements Runnable {
         setInfoFontSize.addActionListener(e -> setInfoFont(new Font("serif", Font.BOLD, Integer.parseInt(JOptionPane.showInputDialog(Canvas.this, "Enter size of info font: (If any exception occurred nothing will change)", infoFont.getSize())))));
         capture.addActionListener(e -> Utils.saveJComponentImage(System.nanoTime() + "", Canvas.this));
         resetRenderManager.addActionListener(e -> {
-            renderManager.clear();
+            camera.clear();
             removeSettingPanel();
             addSettingPanel();
         });
         tickAndShow.addActionListener(e -> {
-            renderManager.tick();
+            camera.tick();
             repaint();
         });
         settingPanel.setBorder(BorderFactory.createTitledBorder("Plain Canvas"));
@@ -142,16 +143,15 @@ public class Canvas extends JPanel implements Runnable {
     public synchronized void start() {
         lastTime = System.nanoTime();
         redrawTimer.start();
-        repaint();
     }
 
     public synchronized void stop() {
         redrawTimer.stop();
-        repaint();
+//        repaint();
     }
 
     public RenderManager getRenderManager() {
-        return renderManager;
+        return camera;
     }
 
     public int getFps() {
@@ -172,7 +172,7 @@ public class Canvas extends JPanel implements Runnable {
         timer = 1;
         delta = 0;
         loopCounter = 0;
-        renderManager.resetCounters();
+        camera.resetCounters();
         timePerTick = 1_000_000_000 / (double) fps;
     }
 
@@ -200,7 +200,7 @@ public class Canvas extends JPanel implements Runnable {
     }
 
     public long getTicksCounter() {
-        return renderManager.getTickCounter();
+        return camera.getTickCounter();
     }
 
     public double getTimePerTick() {
@@ -208,11 +208,11 @@ public class Canvas extends JPanel implements Runnable {
     }
 
     public long getRealFps() {
-        return renderManager.getRenderCounter() * 1_000_000_000L / timer + 1;
+        return camera.getRenderCounter() * 1_000_000_000L / timer + 1;
     }
 
     public long getRealTps() {
-        return renderManager.getTickCounter() * 1_000_000_000L / timer + 1;
+        return camera.getTickCounter() * 1_000_000_000L / timer + 1;
     }
 
     public long getLps() {
@@ -224,7 +224,7 @@ public class Canvas extends JPanel implements Runnable {
     }
 
     public long getRenderCounter() {
-        return renderManager.getRenderCounter();
+        return camera.getRenderCounter();
     }
 
     public Color getInfoColor() {
@@ -255,7 +255,7 @@ public class Canvas extends JPanel implements Runnable {
     }
 
     public void addRender(Render... renders) {
-        renderManager.addRender(renders);
+        camera.addRender(renders);
         repaint();
         revalidate();
     }
@@ -277,6 +277,20 @@ public class Canvas extends JPanel implements Runnable {
         repaint();
     }
 
+    public final Camera camera() {
+        return camera;
+    }
+
+    public final void removeAllRenders() {
+        camera.clear();
+    }
+
+    @Override
+    public void setLayout(LayoutManager mgr) {
+        if (created)
+            System.err.println("AHD:: Can't change layout manager of an Canvas");
+    }
+
     @Override
     public void setBackground(Color bg) {
         backGround = bg;
@@ -296,9 +310,7 @@ public class Canvas extends JPanel implements Runnable {
             g2d.drawImage(bgImage, 0, 0, getWidth(), getHeight(), null);
         }
 
-        try {
-            renderManager.render(g2d);
-        } catch (ConcurrentModificationException ignored) {}
+        camera.render(g2d);
 
         if (!showInfo)
             return;
@@ -310,12 +322,15 @@ public class Canvas extends JPanel implements Runnable {
             return;
         }
 
-
         g2d.drawString(
                 "FPS: " + getRealFps() +
                         ", TPS: " + getRealTps() +
                         ", CPU: " + Utils.round(((OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean()).getProcessCpuLoad() * 100, 2) +
-                        "%, Tick: " + getTicksCounter() + ", Render: " + getRenderCounter() + ", LTT: " + renderManager.numOfAliveTickThreads()
+                        "%, Tick: " + getTicksCounter() + ", Render: " + getRenderCounter() +
+                        ", LTT: " + camera.numOfAliveTickThreads() +
+                        ", STT: " + camera.singleThreadedTick() +
+                        ", TRT: " + camera.tickRoundTime() +
+                        ", RRT: " + camera.renderRoundTime()
                 , 0, (int) (infoFont.getSize() * 0.8)
         );
     }
@@ -329,7 +344,7 @@ public class Canvas extends JPanel implements Runnable {
         boolean flag = delta >= 1;
 
         while (delta >= 1) {
-            renderManager.tick();
+            camera.tick();
             delta--;
         }
 

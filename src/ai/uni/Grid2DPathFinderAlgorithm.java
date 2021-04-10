@@ -1,38 +1,54 @@
 package ai.uni;
 
 
+import algo.Algorithm;
+import utils.SemaphoreBase;
 import utils.Utils;
 
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.Semaphore;
+import java.util.stream.IntStream;
 
-public class Algorithm {
+@Algorithm(type = "Search")
+public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
     private final String[][] cells;
     private int[][] info;
     private final int rows;
     private final int cols;
+    private final HashMap<String, Semaphore> semaphoreMap;
 
-    public Algorithm(String[][] cells) {
+    public Grid2DPathFinderAlgorithm(String[][] cells) {
         this.cells = cells;
-        if (cells == null || cells.length == 0)
-            throw new RuntimeException("AHD:: cells must have at least one row and column");
+        if (cells == null || cells.length == 0 || cells[0].length == 0)
+            throw new RuntimeException("AHD:: cells must have at least one row and one column");
         rows = cells.length;
         cols = cells[0].length;
+        semaphoreMap = new HashMap<>();
+
+        //////
+        addSemaphore("begin-dls");
+        addSemaphore("begin-bfs");
     }
 
     public List<Point> ids(Point start) {
         List<Point> res;
-        for (int i = 0; i < rows + cols - 1; i++)
-            if ((res = dfs(start, new int[rows][cols], i)) != null) {
+        for (int i = 0; i < rows * cols; i++) {
+            info = null;
+            if ((res = dls(start, new int[rows][cols], i)) != null) {
                 Collections.reverse(res);
                 return res;
             }
+        }
         return null;
     }
 
-    public List<Point> dfs(Point start, int[][] explored, int limit) {
-        Utils.sleep(100);
+    public List<Point> dls(Point start, int[][] explored, int limit) {
+        explored[start.x][start.y] = 1;
+        info = explored;
+
+        acquire("begin-dls");
 
         if (isGoal(start))
             return new ArrayList<>(List.of(start));
@@ -40,13 +56,11 @@ public class Algorithm {
         if (limit == 0)
             return null;
 
-        explored[start.x][start.y] = 1;
-        info = explored;
-
-
         List<Point> res;
-        for (var neighbor : neighbors(start))
-            if (explored[neighbor.x][neighbor.y] == 0 && (res = dfs(neighbor, clone(explored), limit - 1)) != null) {
+        var neighbors = neighbors(start);
+        neighbors.stream().filter(e -> explored[e.x][e.y] <= 0).forEach(e -> info[e.x][e.y] = -1);
+        for (var neighbor : neighbors)
+            if (explored[neighbor.x][neighbor.y] <= 0 && (res = dls(neighbor, clone(explored), limit - 1)) != null) {
                 res.add(start);
                 return res;
             }
@@ -65,25 +79,21 @@ public class Algorithm {
         return cells[p.x][p.y].toLowerCase().contains("p");
     }
 
-    private boolean goalTest(String[][] cells, Point point) {
-        return cells[point.x][point.y].equalsIgnoreCase("p");
-    }
-
     private List<Point> neighbors(Point point) {
         var res = new ArrayList<Point>();
-        point.translate(1, 0);
-        if (isNeighbor(point))
-            res.add(new Point(point));
-        point.translate(-2, 0);
-        if (isNeighbor(point))
-            res.add(new Point(point));
-        point.translate(1, 1);
-        if (isNeighbor(point))
-            res.add(new Point(point));
-        point.translate(0, -2);
-        if (isNeighbor(point))
-            res.add(new Point(point));
         point.translate(0, 1);
+        if (isNeighbor(point))
+            res.add(new Point(point));
+        point.translate(1, -1);
+        if (isNeighbor(point))
+            res.add(new Point(point));
+        point.translate(-1, -1);
+        if (isNeighbor(point))
+            res.add(new Point(point));
+        point.translate(-1, 1);
+        if (isNeighbor(point))
+            res.add(new Point(point));
+        point.translate(1, 0);
         return res;
     }
 
@@ -107,8 +117,8 @@ public class Algorithm {
         return cells;
     }
 
-    public int[][] getVisited() {
-        return info;
+    public int[][] getInfo() {
+        return info == null ? info = new int[rows][cols] : info;
     }
 
     public int getRows() {
@@ -117,5 +127,10 @@ public class Algorithm {
 
     public int getCols() {
         return cols;
+    }
+
+    @Override
+    public Map<String, Semaphore> getSemaphoreMap() {
+        return semaphoreMap;
     }
 }

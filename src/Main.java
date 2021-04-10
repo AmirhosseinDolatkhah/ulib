@@ -2,8 +2,8 @@ import jmath.datatypes.functions.Surface;
 import jmath.datatypes.tuples.Point2D;
 import swingutils.MainFrame;
 import visualization.animatedmodels.*;
-import visualization.canvas.Graph2DCanvas;
 import visualization.canvas.Graph3DCanvas;
+import visualization.canvas.ImageCanvas;
 import visualization.shapes.shape3d.Area;
 
 import javax.swing.*;
@@ -59,14 +59,14 @@ public class Main {
 //        gp.addRender(new Area(gp, Color.BLUE, true, 1f, -Math.PI, Math.PI, -Math.PI, Math.PI, 0.1, 0.1,
 //                Surface.curveWrapping(x -> new Point3D(x / PI, Math.sin(x), Math.cos(x)), t -> new Point2D(sin(t) / 5, cos(t) / 10))));
 //        gp.addRender(new GameOfLife2D(gp, 50, 50));
-//        gp.addRender(new GameOfLife3D(gp, 10));
+//        gp.addRender(new GameOfLife3D(gp, 20));
 //        gp.addRender(new VectorField2D(gp, 15, 12));
 //        gp.addRender(new ComplexFunctionVisualization(gp, z -> z.power(2)));
 //        gp.addRender(new Mapper2DVisualization(gp, (x, y) -> new Point2D(x*x-y*y, x*x+y*y)));
 //        gp.addRender(new PuzzleGame(gp, 4, 4));
 //        gp.setFps(1_000_000);
-        //        gp.addRender(new Area(gp, "t.obj"));
-        //        gp.start();
+//        gp.addRender(new Area(gp, "t.obj"));
+//        gp.start();
 //        gp.start();
 //        gp.addRender(new PathFinder(gp, 30, 30, new Point(2, 5), new Point(25, 20)));
 //        gp.addRender(new Snake(gp, 10, 10));
@@ -90,6 +90,7 @@ public class Main {
 //            g2d.setColor(Color.RED);
 //            Graph2DCanvas.simplePlotter2D(ps, gp, g2d);
 //                });
+        f.add(new ImageCanvas(new ImageIcon("this3.png").getImage()));
         SwingUtilities.invokeLater(f);
     }
 }

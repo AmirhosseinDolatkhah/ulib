@@ -119,7 +119,7 @@ public final class Jurl {
     private void findFormatFromResponseHeader() {
         try {
             var contentType = response0.headers().map().get("content-type").get(0).toLowerCase();
-            if (contentType.contains("octet-stream") | contentType.contains("download")) {
+            if (contentType.contains("octet-stream") || contentType.contains("download")) {
                 var url = firstOf("url");
                 while (url.endsWith("/"))
                     url = url.substring(0, url.length() - 1);
@@ -153,7 +153,7 @@ public final class Jurl {
                     } catch (Exception e) {
                         System.err.println("WARNING:: Error in finding file");
                     }
-                } else if (argsMap.containsKey("json") | argsMap.containsKey("data")) {
+                } else if (argsMap.containsKey("json") || argsMap.containsKey("data")) {
                     res.POST(HttpRequest.BodyPublishers.ofString(firstOf("data")));
                 } else {
                     res.POST(HttpRequest.BodyPublishers.noBody());
@@ -167,7 +167,7 @@ public final class Jurl {
                     } catch (Exception e) {
                         System.err.println("WARNING:: Error in finding file");
                     }
-                } else if (argsMap.containsKey("json") | argsMap.containsKey("data")) {
+                } else if (argsMap.containsKey("json") || argsMap.containsKey("data")) {
                     res.method("HEAD", HttpRequest.BodyPublishers.ofString("{\"" + firstOf("data").trim() + "\"}"));
                 } else {
                     res.method("PATCH", HttpRequest.BodyPublishers.noBody());
@@ -181,7 +181,7 @@ public final class Jurl {
                     } catch (Exception e) {
                         System.err.println("WARNING:: Error in finding file");
                     }
-                } else if (argsMap.containsKey("json") | argsMap.containsKey("data")) {
+                } else if (argsMap.containsKey("json") || argsMap.containsKey("data")) {
                     res.PUT(HttpRequest.BodyPublishers.ofString(firstOf("data").trim()));
                 } else {
                     res.PUT(HttpRequest.BodyPublishers.noBody());
@@ -195,7 +195,7 @@ public final class Jurl {
                     } catch (Exception e) {
                         System.err.println("WARNING:: Error in finding file");
                     }
-                } else if (argsMap.containsKey("json") | argsMap.containsKey("data")) {
+                } else if (argsMap.containsKey("json") || argsMap.containsKey("data")) {
                     res.method("PATCH", HttpRequest.BodyPublishers.ofString(firstOf("data").trim()));
                 } else {
                     res.method("PATCH", HttpRequest.BodyPublishers.noBody());
@@ -460,8 +460,8 @@ public final class Jurl {
 
     private void checkConflictInArgs() {
         var method = firstOf("method");
-        var res = method.equals("GET") | method.equals("DELETE");
-        res &= argsMap.containsKey("data") | argsMap.containsKey("json");
+        var res = method.equals("GET") || method.equals("DELETE");
+        res &= argsMap.containsKey("data") || argsMap.containsKey("json");
         if (res)
             System.err.println("WARNING:: Bad combination of method and data or json flags");
         if (!argsMap.containsKey("content-type") && argsMap.containsKey("data") && !argsMap.containsKey("json")) {
@@ -473,7 +473,7 @@ public final class Jurl {
         }
         if (!argsMap.containsKey("content-type"))
             return;
-        if (firstOf("content-type").equals("application/json") | (argsMap.containsKey("json") && !argsMap.containsKey("file"))) {
+        if (firstOf("content-type").equals("application/json") || (argsMap.containsKey("json") && !argsMap.containsKey("file"))) {
             try {
                 checkJsonFormat(firstOf("data"));
             } catch (Exception e) {

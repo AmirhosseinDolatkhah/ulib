@@ -14,21 +14,26 @@ import java.util.List;
 public class PathFinderVisualPanel extends GridPlain2D {
 
     private final String[][] cells;
-    private final Algorithm algorithm;
+    private final Grid2DPathFinderAlgorithm algorithm;
 
     public PathFinderVisualPanel(CoordinatedScreen cs, String[][] cells) {
         super(cs, cells.length, cells[0].length);
         this.cells = cells;
         var rows = cells.length;
         var cols = cells[0].length;
-        algorithm = new Algorithm(cells);
-        Utils.checkTimePerform(e -> algorithm.ids(new Point()), false, "ids");
+        algorithm = new Grid2DPathFinderAlgorithm(cells);
+        Utils.checkTimePerform(() -> algorithm.ids(new Point()), false, "ids");
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++) {
                 var tile = getTile(i, j);
                 int finalI = i;
                 int finalJ = j;
-                tile.setColorFunc(() -> algorithm.getVisited()[finalI][finalJ] == 0 ? Color.BLUE : colorOf(cells[finalI][finalJ]));
+                tile.setColorFunc(() -> switch (algorithm.getInfo()[finalI][finalJ]) {
+                    case 0 -> colorOf(cells[finalI][finalJ]);
+                    case 1 -> Color.BLUE;
+                    case -1 -> Color.GREEN;
+                    default -> Color.WHITE;
+                });
                 tile.setTextFunction(new StringSupplier() {
                     @Override
                     public String getText() {
@@ -66,19 +71,21 @@ public class PathFinderVisualPanel extends GridPlain2D {
     }
 
     private String textOf(String cell) {
-//        return switch (cell.toLowerCase()) {
-//            case "1b", "2b" -> "B";
-//            case "1r", "2r" -> "R";
-//            case "x" -> "X";
-//            case "1p", "2p" -> "P";
-//            case "f" -> "F";
-//            default -> cell;
-//        };
-        return cell.toLowerCase().startsWith("d") ? cell.substring(1) : "";
+        return switch (cell.toLowerCase()) {
+            case "1b", "2b" -> "B";
+            case "1r", "2r" -> "R";
+            case "x" -> "X";
+            case "1p", "2p" -> "P";
+            default -> "";
+        };
     }
 
     private boolean visibilityOf(String cell) {
         return true;
+    }
+
+    public Grid2DPathFinderAlgorithm getAlgorithm() {
+        return algorithm;
     }
 
     private static boolean goalTest(String[][] cells, Point point) {
@@ -117,5 +124,9 @@ public class PathFinderVisualPanel extends GridPlain2D {
         while (scanner.hasNextLine())
             res[counter++] = scanner.nextLine().trim().split("\t");
         return res;
+    }
+
+    public String[][] getCells() {
+        return cells;
     }
 }

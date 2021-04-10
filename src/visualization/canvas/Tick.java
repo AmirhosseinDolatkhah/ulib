@@ -8,4 +8,9 @@ public interface Tick extends Runnable {
     default void run() {
         tick();
     }
+
+    default void tick(int repeats) {
+        for (int i = 0; i < repeats; i++)
+            tick();
+    }
 }

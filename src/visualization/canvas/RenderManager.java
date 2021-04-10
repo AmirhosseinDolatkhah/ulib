@@ -1,63 +1,43 @@
 package visualization.canvas;
 
+import utils.Utils;
 import visualization.shapes.shape3d.Area;
 import visualization.shapes.shape3d.FlatSurface;
 import visualization.shapes.shape3d.Shape3D;
 
-import javax.swing.Timer;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 
 public class RenderManager extends ArrayList<Render> implements Render {
-    private final ReentrantLock lock;
+    private static final long MAX_SINGLE_THREADED_TICK_TIME = 80;
     private int renderCounter;
     private int tickCounter;
+    private final ThreadPoolExecutor tickExecutor;
     private final Runnable tickRunnable;
-    private final Timer checkTickThreadsTimer;
-    private final ArrayList<Thread> tickThreads;
+    private final AtomicLong lastTickTime;
+    private long lastRenderTime;
 
     public RenderManager(Render... renders) {
         super(Arrays.asList(renders));
-        lock = new ReentrantLock();
+        tickExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(15);
+        lastTickTime = new AtomicLong();
         renderCounter = 0;
         tickCounter = 0;
         tickRunnable = () -> {
-            lock.lock();
-            var threads = new ArrayList<Thread>();
-            for (int i = 0; i < size(); i++) {
-                int finalI = i;
-                var t = new Thread(() -> get(finalI).tick());
-                threads.add(t);
-                t.start();
-            }
-            for (var t : threads) {
-                try {
-                    t.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
+            var t = System.currentTimeMillis();
+            forEach(Tick::tick);
+            lastTickTime.set(System.currentTimeMillis() - t);
             tickCounter++;
-            lock.unlock();
         };
-        tickThreads = new ArrayList<>();
-        checkTickThreadsTimer = new Timer(15, e -> {
-            for (int i = 0; i < tickThreads.size(); i++)
-                if (!tickThreads.get(i).isAlive())
-                    tickThreads.remove(i--);
-        });
-        checkTickThreadsTimer.start();
     }
 
     public int numOfAliveTickThreads() {
-        return tickThreads.size();
-    }
-
-    public Timer getCheckTickThreadsTimer() {
-        return checkTickThreadsTimer;
+        return tickExecutor.getActiveCount();
     }
 
     public void addRender(Render... renders) {
@@ -91,6 +71,7 @@ public class RenderManager extends ArrayList<Render> implements Render {
 
     @Override
     public void render(Graphics2D g2d) {
+        var t = System.currentTimeMillis();
         g2d.addRenderingHints(Map.of(
                 RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY,
                 RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY,
@@ -102,15 +83,14 @@ public class RenderManager extends ArrayList<Render> implements Render {
                 RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC
 //                RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR
         ));
-//        lock.lock();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         var list = new ArrayList<Shape3D>();
         stream().filter(Area.class::isInstance).map(e -> ((Area) e).getComponents()).forEach(list::addAll);
         list.sort(Comparator.comparingDouble(f -> f.getCenter().z));
         list.forEach(r -> r.renderIfInView(g2d));
         stream().filter(e -> !(e instanceof Area)).forEach(render -> render.renderIfInView(g2d));
+        lastRenderTime = System.currentTimeMillis() - t;
         renderCounter++;
-//        lock.unlock();
     }
 
     public int getRenderCounter() {
@@ -122,21 +102,35 @@ public class RenderManager extends ArrayList<Render> implements Render {
     }
 
     public void resetCounters() {
-        lock.lock();
         renderCounter = 0;
         tickCounter = 0;
-        lock.unlock();
+    }
+
+    public synchronized void asyncTickCounterChange(int change) {
+        tickCounter += change;
+    }
+
+    public boolean singleThreadedTick() {
+        return lastTickTime.get() < MAX_SINGLE_THREADED_TICK_TIME;
+    }
+
+    public long tickRoundTime() {
+        return lastTickTime.get();
+    }
+
+    public long renderRoundTime() {
+        return lastRenderTime;
     }
 
     @Override
     public void tick() {
-//        if (tickThreads.size() > 80)
-//            return;
-//        var t = new Thread(tickRunnable);
-//        tickThreads.add(t);
-//        t.start();
-//        tickRunnable.run();
-        forEach(Render::tick);
-        tickCounter++;
+        if (lastTickTime.get() < MAX_SINGLE_THREADED_TICK_TIME) {
+            var t = System.currentTimeMillis();
+            forEach(Tick::tick);
+            lastTickTime.set(System.currentTimeMillis() - t);
+            tickCounter++;
+        } else {
+            tickExecutor.execute(tickRunnable);
+        }
     }
 }

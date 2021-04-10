@@ -1,16 +1,11 @@
 package visualization.canvas;
 
-import com.sun.management.OperatingSystemMXBean;
 import jmath.datatypes.tuples.Point2D;
 import jmath.datatypes.tuples.Point3D;
-import swingutils.MainFrame;
-import utils.inputmanagers.KeyManager;
-import visualization.render3D.camera.Camera;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.lang.management.ManagementFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static utils.Utils.round;
@@ -24,7 +19,6 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
     private boolean showAxis;
     private boolean showMousePos;
     protected boolean isDark;
-    protected final Camera camera;
 
     protected double xScale;
     protected double yScale;
@@ -45,7 +39,7 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
         if (setKeyListener)
             handleKeyListener();
         addRender(this::drawGrid, this::drawAxis);
-        camera = new Camera(this,0, 0, 0);
+        camera.setCs(this);
     }
 
     public CoordinatedCanvas() {
@@ -115,9 +109,6 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
                     var dy = screenY(mp.y) - e.getY();
                     xScale = Math.max(xScale, Double.MIN_VALUE);
                     yScale = Math.max(yScale, Double.MIN_VALUE);
-//                    camera.move(coordinateXLen(dx), coordinateYLen(dy), 0);
-//                    shiftX += dx;
-//                    shiftY += dy;
                     moveOnPlane(dx, dy);
                 }
             }
@@ -129,8 +120,8 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
             @Override
             public void keyTyped(KeyEvent e) {
                 switch (e.getKeyCode()) {
-                    case KeyEvent.VK_W -> camera.move(0, 0, -0.2);
-                    case KeyEvent.VK_S -> camera.move(0, 0, 0.2);
+                    case KeyEvent.VK_W -> {camera.move(0, 0, -0.2); repaint();}
+                    case KeyEvent.VK_S -> {camera.move(0, 0, 0.2); repaint();}
                     case KeyEvent.VK_A -> moveOnPlane(-5, 0);
                     case KeyEvent.VK_D -> moveOnPlane(5, 0);
                     case KeyEvent.VK_SPACE -> moveOnPlane(0, 5);
@@ -140,10 +131,9 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
                 }
                 if (e.isControlDown())
                     zoom(1 + (e.getKeyCode() == KeyEvent.VK_EQUALS ? 0.1 : e.getKeyCode() == KeyEvent.VK_MINUS ? -0.1 : 0));
-                repaint();
             }
         });
-        Toolkit.getDefaultToolkit().addAWTEventListener(e -> getKeyListeners()[0].keyTyped((KeyEvent) e), AWTEvent.KEY_EVENT_MASK);
+//        Toolkit.getDefaultToolkit().addAWTEventListener(e -> getKeyListeners()[0].keyTyped((KeyEvent) e), AWTEvent.KEY_EVENT_MASK);
     }
 
     protected Color getAxisColor() {
@@ -336,11 +326,6 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
     }
 
     @Override
-    public final Camera camera() {
-        return camera;
-    }
-
-    @Override
     public Point screen(Point2D p) {
         return new Point(screenX(p.x), screenY(p.y));
     }
@@ -474,10 +459,9 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
         if (!isShowInfo())
             return;
         g.drawString("ScaleX: " + round(xScale, 2) + ", ScaleY: " + round(yScale, 2), 0, (int) (infoFont.getSize() * 2.1));
-        try {
+        if (mousePoint != null)
             g.drawString("MouseClicked(Pixels): (" + mousePoint.x + ", " + mousePoint.y +
                     "), MouseClicked(Coordinated): (" + round(coordinateX(mousePoint.x), 2) + ", " + round(coordinateY(mousePoint.y), 2) + "), Z: " + round(camera.getZ(), 2), 0, (int) (infoFont.getSize() * 3.2));
-        } catch (NullPointerException ignore) {}
         if (!isRunning())
             return;
         var mp = getMousePosition();

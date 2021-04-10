@@ -628,4 +628,8 @@ public class Graph2DCanvas extends CoordinatedCanvas {
 
         return panel;
     }
+
+    public static Point[] getPointsOf2DArc(Arc2D arc, double l, double u, double delta, CoordinatedScreen cs) {
+        return arc.sample(l, u, delta, 2).stream().map(cs::screen).toArray(Point[]::new);
+    }
 }

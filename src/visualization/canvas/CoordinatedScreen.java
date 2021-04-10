@@ -3,7 +3,6 @@ package visualization.canvas;
 import jmath.datatypes.tuples.AbstractPoint;
 import jmath.datatypes.tuples.Point2D;
 import jmath.datatypes.tuples.Point3D;
-import visualization.render3D.camera.Camera;
 
 import java.awt.*;
 
@@ -43,4 +42,11 @@ public interface CoordinatedScreen {
             return screen((Point2D) point);
         throw new RuntimeException("AHD:: Only Point2D and Point3D is Considered");
     }
+
+    static CoordinatedScreen of2D(Point2D center, double scaleX, double scaleY) {
+        var res = new Graph2DCanvas();
+        // TODO://
+        return res;
+    }
 }
+

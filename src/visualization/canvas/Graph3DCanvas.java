@@ -13,8 +13,6 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-import static utils.Utils.round;
-
 public class Graph3DCanvas extends Graph2DCanvas {
 
     private final Point3D rotationAroundCenter;
@@ -128,17 +126,6 @@ public class Graph3DCanvas extends Graph2DCanvas {
     public Point3D getRotationAroundCenter() {
         return rotationAroundCenter;
     }
-
-//    @Override
-//    public synchronized void paintComponent(Graphics g) {
-//        super.paintComponent(g);
-//
-//        if (!isShowInfo())
-//            return;
-//        g.drawString("rotationX: " + round(rotationAroundCenter.x, 2) +
-//                ", rotationY: " + round(rotationAroundCenter.y, 2) + ", rotationZ: " +
-//                round(rotationAroundCenter.z, 2), 0, (int) (infoFont.getSize() * 5.8));
-//    }
 
     @Override
     protected JPanel getSettingPanel() {
@@ -404,9 +391,4 @@ public class Graph3DCanvas extends Graph2DCanvas {
     @Override
     protected void drawAxis(Graphics2D g2d) {
     }
-//
-//    @Override
-//    protected void drawGrid(Graphics2D g2d) {
-//        super.drawGrid(g2d);
-//    }
 }
