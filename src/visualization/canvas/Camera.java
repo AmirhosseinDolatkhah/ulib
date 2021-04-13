@@ -123,15 +123,6 @@ public class Camera extends RenderManager {
     }
 
     public boolean inViewPort(Point3D p) {
-//        boolean windowSizeAffect = true;
-//        if (cs instanceof JComponent) {
-//            var component = (JComponent) cs;
-//            windowSizeAffect =
-//                    p.x > cs.coordinateX(0) &&
-//                    p.x < cs.coordinateX(component.getWidth()) &&
-//                    p.y < cs.coordinateY(0) &&
-//                    p.y > cs.coordinateY(component.getHeight());
-//        }
-        return p.z < p.z;
+        return p.z < pos.z;
     }
 }

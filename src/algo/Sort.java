@@ -3,55 +3,54 @@ package algo;
 import utils.Utils;
 
 import java.util.Arrays;
+import java.util.concurrent.Future;
+import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public final class Sort {
     public static void mergeSort(int[] arr) {
-        mergeSort(arr, 0, arr.length);
+        mergeSort(arr, 0, arr.length - 1);
     }
 
     private static void mergeSort(int[] arr, int start, int end) {
-        if (start >= --end)
+        if (end <= start)
             return;
-        var middle = (start + end) / 2;
-        mergeSort(arr, start, middle);
-        mergeSort(arr, middle + 1, end);
+        var m = (start + end) / 2;
 
-        merge(arr, start, end);
+        mergeSort(arr, start, m);
+        mergeSort(arr, m + 1, end);
+
+        merge(arr, start, m, end);
     }
 
-    private static void merge(int[] arr, int start, int end) {
-        var middle = (start + end) / 2;
-        int lIndex  = 0;
+    private static void merge(int[] arr, int start, int middle, int end) {
+        int kIndex = start;
         int rIndex = 0;
-        int[] left = new int[middle - start + 1];
-        int[] right = new int[end - middle];
-        System.arraycopy(arr, start, left, 0, left.length);
-        System.arraycopy(arr, middle + 1, right, 0, right.length);
-        while (lIndex < left.length || rIndex < right.length) {
-            if (rIndex < right.length && lIndex < left.length) {
-                if (left[lIndex] <= right[rIndex])
-                    arr[start++] = left[lIndex++];
-                else
-                    arr[start++] = right[rIndex++];
+        int lIndex = 0;
+        int[] left = Arrays.copyOfRange(arr, start, middle + 1);
+        int[] right = Arrays.copyOfRange(arr, middle + 1, end + 1);
+        while (rIndex < right.length && lIndex < left.length)
+            if (left[lIndex] < right[rIndex]) {
+                arr[kIndex++] = left[lIndex++];
+            } else {
+                arr[kIndex++] = right[rIndex++];
             }
-
-            if (lIndex >= left.length)
-                arr[start++] = right[rIndex++];
-
-            if (rIndex >= right.length && lIndex < left.length)
-                arr[start++] = left[lIndex++];
-        }
+        while (lIndex < left.length)
+            arr[kIndex++] = left[lIndex++];
+        while (rIndex < right.length)
+            arr[kIndex++] = right[rIndex++];
     }
 
     //////////////
 
     public static void quickSort(int[] arr) {
-        quickSort(arr, 0, arr.length);
+        quickSort(arr, 0, arr.length - 1);
     }
 
     private static void quickSort(int[] arr, int start, int end) {
-        if (start >= --end)
+        if (end <= start)
             return;
+
         var partition = partition(arr, start, end);
 
         quickSort(arr, start, partition - 1);
@@ -75,27 +74,83 @@ public final class Sort {
 
     /////////////
 
-    private static void checkTimeOfIntArraySort(int len, SortArrayFunc sorter) {
-        var t = System.currentTimeMillis();
-        int[] src = new int[len];
-        for (int i = 0; i < len; i++)
-            src[i] = (int) (Math.random() * Integer.MAX_VALUE);
-        System.out.println("-".repeat(20));
-        System.out.println("Time to generate array: " + (System.currentTimeMillis() - t) + " ms");
-        t = System.currentTimeMillis();
-        sorter.sort(src);
-        System.out.println("Time to sort: " + (System.currentTimeMillis() - t) + " ms");
-        System.out.println("-".repeat(20));
+    public static void selectionSort(int[] arr) {
+        for (int i = 0; i < arr.length - 1; i++)
+            for (int j = i + 1; j < arr.length; j++)
+                if (arr[i] > arr[j]) {
+                    int temp = arr[i];
+                    arr[i] = arr[j];
+                    arr[j] = temp;
+                }
     }
 
     /////////////
 
+    public static void bubbleSort(int[] arr) {
+        int i, j, temp;
+        boolean swapped;
+        var n = arr.length;
+        for (i = 0; i < n - 1; i++) {
+            swapped = false;
+            for (j = 0; j < n - i - 1; j++)
+                if (arr[j] > arr[j + 1]) {
+                    temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+                    swapped = true;
+                }
+            if (!swapped)
+                break;
+        }
+    }
+
+    /////////////
+
+    public static void recursiveBubbleSort(int[] arr) {
+        recursiveBubbleSort(arr, arr.length);
+    }
+
+    public static void recursiveBubbleSort(int[] arr, int len) {
+        if (len == 1)
+            return;
+        for (int i = 0; i < len - 1; i++)
+            if (arr[i] > arr[i + 1]) {
+                int temp = arr[i];
+                arr[i] = arr[i + 1];
+                arr[i + 1] = temp;
+            }
+        recursiveBubbleSort(arr, len-1);
+    }
+
+    ////////////
+
+
+
+    ////////////
     public static void main(String[] args) {
-//        checkTimeOfIntArraySort(2_000_000, Sort::mergeSort);
-        int[] arr = new int[] {1, 4, 3, 5, 6, 7, 2, 4, 2, 5, 12, 43, 1, 3, 5, 32, 2, 33};
-        int[] arr2 = new int[] {1, 3, 2, 4, 5, 7, 6, 9, 8};
-        mergeSort(arr);
-        System.out.println(Arrays.toString(arr));
+        int len = 100_000_000;
+        var random = new int[len];
+        Arrays.setAll(random, i -> (int) (Math.random() * Integer.MAX_VALUE));
+        var clone = new int[len];
+
+        System.arraycopy(random, 0, clone, 0, len);
+        Utils.checkTimePerform(() -> Arrays.sort(clone), true, "Arrays::sort");
+
+        System.arraycopy(random, 0, clone, 0, len);
+        Utils.checkTimePerform(() -> mergeSort(clone), true, "Sort::mergeSort");
+
+        System.arraycopy(random, 0, clone, 0, len);
+        Utils.checkTimePerform(() -> quickSort(clone), true, "Sort::quickSort");
+
+        System.arraycopy(random, 0, clone, 0, len);
+        Utils.checkTimePerform(() -> selectionSort(clone), true, "Sort::selectionSort");
+
+        System.arraycopy(random, 0, clone, 0, len);
+        Utils.checkTimePerform(() -> bubbleSort(clone), true, "Sort::bubbleSort");
+
+//        System.arraycopy(random, 0, clone, 0, len);
+//        Utils.checkTimePerform(() -> recursiveBubbleSort(clone), true, "Sort::recursiveBubbleSort");
+//        System.out.println(Arrays.toString(Arrays.copyOfRange(clone, 0, 20)));
     }
 
     /////////////

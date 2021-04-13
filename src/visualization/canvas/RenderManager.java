@@ -81,9 +81,8 @@ public class RenderManager extends ArrayList<Render> implements Render {
                 RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON,
                 RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE,
                 RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC
-//                RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR
         ));
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+//        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         var list = new ArrayList<Shape3D>();
         stream().filter(Area.class::isInstance).map(e -> ((Area) e).getComponents()).forEach(list::addAll);
         list.sort(Comparator.comparingDouble(f -> f.getCenter().z));

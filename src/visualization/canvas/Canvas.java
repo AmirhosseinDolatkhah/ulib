@@ -107,7 +107,7 @@ public class Canvas extends JPanel implements Runnable {
         settingPanel.add(resetRenderManager);
         settingPanel.add(tickAndShow);
 
-        start.addActionListener(e -> {start(); camera.resetCounters();});
+        start.addActionListener(e -> start());
         stop.addActionListener(e -> stop());
         showInfo.addActionListener(e -> setShowInfo(showInfo.isSelected()));
         showBgImg.addActionListener(e -> setShowBgImg(showBgImg.isSelected()));

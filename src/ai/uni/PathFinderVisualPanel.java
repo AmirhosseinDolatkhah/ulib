@@ -22,7 +22,10 @@ public class PathFinderVisualPanel extends GridPlain2D {
         var rows = cells.length;
         var cols = cells[0].length;
         algorithm = new Grid2DPathFinderAlgorithm(cells);
-        Utils.checkTimePerform(() -> algorithm.ids(new Point()), false, "ids");
+//        Utils.checkTimePerform(e -> algorithm.aStar(new Point(9, 4)), false, "ids",
+//                ee -> {ee.forEach(e -> algorithm.getInfo()[e.x][e.y] = 15); System.out.println("path len: " + ee.size());});
+        Utils.checkTimePerform(e -> algorithm.robotPath(algorithm.bbfs(new Point(1, 2))), false, "ids",
+                ee -> {if (ee != null) System.out.println("path len: " + ee.size());});
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++) {
                 var tile = getTile(i, j);
@@ -30,8 +33,11 @@ public class PathFinderVisualPanel extends GridPlain2D {
                 int finalJ = j;
                 tile.setColorFunc(() -> switch (algorithm.getInfo()[finalI][finalJ]) {
                     case 0 -> colorOf(cells[finalI][finalJ]);
-                    case 1 -> Color.BLUE;
+                    case 1, 2 -> Color.BLUE;
                     case -1 -> Color.GREEN;
+                    case 10 -> Color.YELLOW;
+                    case 15 -> Color.CYAN;
+                    case 16 -> Color.RED;
                     default -> Color.WHITE;
                 });
                 tile.setTextFunction(new StringSupplier() {
@@ -76,6 +82,7 @@ public class PathFinderVisualPanel extends GridPlain2D {
             case "1r", "2r" -> "R";
             case "x" -> "X";
             case "1p", "2p" -> "P";
+            case "1pb", "2pb" -> "PB";
             default -> "";
         };
     }

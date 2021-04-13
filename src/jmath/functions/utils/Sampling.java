@@ -242,6 +242,12 @@ public final class Sampling {
         return res;
     }
 
+    public static List<Point2D> sampleOf2DRectangularRegion(List<Double> xSample, List<Double> ySample) {
+        List<Point2D> res = new ArrayList<>();
+        ySample.forEach(y -> xSample.forEach(x -> res.add(new Point2D(x, y))));
+        return res;
+    }
+
     public static List<Double> sample(double l, double u, double delta) {
         List<Double> res = new ArrayList<>();
         double x = l - delta;

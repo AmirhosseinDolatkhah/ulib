@@ -7,6 +7,8 @@ import visualization.canvas.Graph3DCanvas;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.FileNotFoundException;
 
 public class Main {
@@ -14,20 +16,41 @@ public class Main {
         var f = new MainFrame();
         var gp = new Graph3DCanvas();
         PathFinderVisualPanel p;
-        gp.addRender(p = new PathFinderVisualPanel(gp, "test1.txt"));
+        gp.addRender(p = new PathFinderVisualPanel(gp, "test3.txt"));
         f.add(gp);
         var b = new JButton("Step");
-        var wrapper = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        wrapper.add(b);
-        f.add(wrapper, BorderLayout.SOUTH);
         b.addActionListener(e -> {
             p.getAlgorithm().release("begin-dls");
             f.repaint();
             gp.getRenderManager().asyncTickCounterChange(1);
         });
-        p.getAlgorithm().getReleaseTimer("begin-dls", 1000, 5).start();
+        var timer = p.getAlgorithm().getReleaseTimer("begin-dls", 40);
+        gp.addMouseListener(new MouseAdapter() {
+            private boolean running = false;
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                timer.stop();
+                if (e.isControlDown()) {
+                    running = !running;
+                    if (running)
+                        timer.start();
+                    else
+                        timer.stop();
+                } else if (e.isShiftDown()) {
+                    p.getAlgorithm().release("begin-dls");
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (running)
+                    timer.start();
+            }
+
+        });
+        gp.start();
 //        p.getAlgorithm().ignoreSemaphore("begin-dls");
-        gp.camera().addTick(() -> Utils.sleep(2000));
         SwingUtilities.invokeLater(f);
     }
 }

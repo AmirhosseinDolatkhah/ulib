@@ -14,9 +14,11 @@ import visualization.render3D.shading.Shader;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static java.lang.Math.*;
+import static utils.Utils.checkBounds;
 
 @SuppressWarnings("unused")
 public class Area extends Shape3D {
@@ -32,19 +34,35 @@ public class Area extends Shape3D {
         super(canvas);
         this.surfaces = surfaces;
         this.color = color;
-        var domain = Sampling.sampleOf2DRectangularRegion(xL, xU, yL, yU, deltaX, deltaY);
+        var xSample = Sampling.sample(xL, xU, deltaX);
+        var ySample = Sampling.sample(yL, yU, deltaY);
+        var domain = Sampling.sampleOf2DRectangularRegion(xSample, ySample);
         for (var s : surfaces)
             domain.forEach(p -> points.add(s.valueAt(p)));
-        int numberOfCols = (int) ((xU - xL) / deltaX) + 2;
-        int numberOfRows = (int) ((yU - yL) / deltaY) + 2;
+        int numberOfCols = xSample.size();
+        int numberOfRows = ySample.size();
         numOfSides = numberOfCols * numberOfRows;
-
+        var maxZ = points.stream().mapToDouble(p -> p.z < 0 ? -p.z : p.z).max().orElse(1);
+        maxZ = maxZ == 0 ? 1 : maxZ;
+        xU = Math.max(Math.abs(xL), Math.abs(xU));
+        yU = Math.max(Math.abs(yL), Math.abs(yU));
         for (int i = 0; i < points.size(); i++)
-            if (i + numberOfCols + 1 < points.size() &&
+            if (
+                    i + numberOfCols + 1 < points.size() &&
                     i % numberOfCols < numberOfCols - 1 &&
-                    i / numberOfCols < numberOfRows - 1)
-                components.add(new FlatSurface(canvas, color, isFill, thickness,
+                    i / numberOfCols < numberOfRows - 1
+            ) {
+                var p = points.get(i);
+                components.add(new FlatSurface(canvas,
+                        new Color(
+                                checkBounds(Math.abs((int) (Math.atan2(p.y, p.x) * 256)), 35, 255),
+                                checkBounds(Math.abs((int) (p.x/xU * 256)), 35, 255),
+                                checkBounds(Math.abs((int) (p.y/yU * 256)), 35, 255),
+                                checkBounds(Math.abs((int) (p.z/maxZ * 256)), 35, 255)
+                        ),
+                        isFill, thickness,
                         points.get(i), points.get(i + 1), points.get(i + numberOfCols + 1), points.get(i + numberOfCols)));
+            }
         shader = new Shader(
                 new LightSource(new Point3D(1, 1, 1), Color.RED, 0.1)
 //                new LightSource(new Point3D(-1, -1, 1), Color.GREEN, 0.1)

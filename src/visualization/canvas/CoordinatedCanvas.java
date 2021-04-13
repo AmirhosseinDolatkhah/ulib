@@ -332,7 +332,7 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
 
     @Override
     public Point screen(Point3D p) {
-        double dist = Math.sqrt(p.x*p.x + p.y*p.y) * Math.abs(20/(10+camera.getZ()-p.z));
+        double dist = Math.sqrt(p.x*p.x + p.y*p.y) * Math.abs(10/(10+camera.getZ()-p.z));
         double theta = Math.atan2(p.y, p.x);
         return new Point(screenX(dist * Math.cos(theta)), screenY(dist * Math.sin(theta)));
     }
