@@ -2,19 +2,18 @@ package ai.uni;
 
 
 import algo.Algorithm;
-import jmath.datatypes.tuples.Point3D;
 import org.jetbrains.annotations.NotNull;
 import utils.SemaphoreBase;
 
 import java.awt.*;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
 @Algorithm(type = "Search")
 public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
-    private final String[][] cells;
+    private String[][] cells;
+    private final String[][] safeCellsCopy;
     private int[][] info;
     private final int rows;
     private final int cols;
@@ -27,11 +26,11 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
         rows = cells.length;
         cols = cells[0].length;
         semaphoreMap = new HashMap<>();
-
+        safeCellsCopy = new String[rows][cols];
+        for (int i = 0; i < rows; i++)
+            System.arraycopy(cells[i], 0, safeCellsCopy[i], 0, cols);
         //////
-        addSemaphore("begin-dls");
-        addSemaphore("middle-dls");
-        addSemaphore("begin-bfs");
+        addSemaphore("step");
     }
 
     private Point findRobot() {
@@ -50,12 +49,12 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
                 if (res.isEmpty())
                     break;
                 Collections.reverse(res);
-                acquire("begin-dls");
+                acquire("step");
                 info = null;
                 return res;
             }
         }
-        acquire("begin-dls");
+        acquire("step");
         info = null;
         return null;
     }
@@ -64,7 +63,7 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
         explored[start.x][start.y] = 10;
         info = explored;
 
-        acquire("begin-dls");
+        acquire("step");
 
         if (isGoal(start))
             return new ArrayList<>(List.of(start));
@@ -81,7 +80,7 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
         for (var neighbor : neighbors)
             if (explored[neighbor.x][neighbor.y] <= 0) {
                 info[start.x][start.y] = 10;
-                acquire("begin-dls");
+                acquire("step");
                 info[start.x][start.y] = 1;
                 explored[neighbor.x][neighbor.y] = 1;
                 res = dls(neighbor, clone(explored), limit - 1);
@@ -111,8 +110,58 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
         return cells[p.x][p.y].toLowerCase().contains("p");
     }
 
-    private List<Point> neighborsDest(Point point) {
-        return neighbors(point, -2, true);
+    private List<Point> neighborsDest(Point butter) {
+        //For first call.
+        var res = new ArrayList<Point>();
+        if(cells[butter.x][butter.y].contains("p")) {
+            var clone = new Point(butter);
+            clone.translate(0, -1);
+            if (isNeighbor(clone))
+                res.add(new Point(clone));
+            clone.translate(1, 1);
+            if (isNeighbor(clone))
+                res.add(new Point(clone));
+            clone.translate(-1, 1);
+            if (isNeighbor(clone))
+                res.add(new Point(clone));
+            clone.translate(-1, -1);
+            if (isNeighbor(clone))
+                res.add(new Point(clone));
+            return res;
+        }
+
+
+        var oldButter = new Point(butter);
+        var oldRobot = findRobot();
+        var newRobot = new Point(2 * oldRobot.x - butter.x, 2 * oldRobot.y - butter.y);
+        if(!isNeighbor(newRobot))
+            return new ArrayList<>();
+
+        removeCellAttribute(oldButter);
+        setCellAttribute(oldRobot, 'b');
+        setCellAttribute(newRobot, 'r');
+
+
+        res.add(newRobot);
+        var clone = new Point(oldRobot);
+        clone.translate(0, -1);
+        if (!clone.equals(oldButter) && !clone.equals(newRobot) && validNeighborForDest(clone, newRobot))
+            res.add(new Point(clone));
+        clone.translate(1, 1);
+        if (!clone.equals(oldButter) && !clone.equals(newRobot) && validNeighborForDest(clone, newRobot))
+            res.add(new Point(clone));
+        clone.translate(-1, 1);
+        if (!clone.equals(oldButter) && !clone.equals(newRobot) && validNeighborForDest(clone, newRobot))
+            res.add(new Point(clone));
+        clone.translate(-1, -1);
+        if (!clone.equals(oldButter) && !clone.equals(newRobot) && validNeighborForDest(clone, newRobot))
+            res.add(new Point(clone));
+
+        removeCellAttribute(newRobot);
+        setCellAttribute(oldRobot, 'r');
+        setCellAttribute(oldButter, 'b');
+
+        return res;
     }
 
     private List<Point> neighbors(Point point) {
@@ -135,7 +184,7 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
             clone.translate(-1, -1);
             if (isNeighbor(clone))
                 res.add(new Point(clone));
-        return res;
+            return res;
         }
         if (validNeighbor(point, clone, factor))
             res.add(new Point(clone));
@@ -155,53 +204,83 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
         return point.x > -1 && point.x < rows &&
                 point.y > -1 && point.y < cols &&
                 !cells[point.x][point.y].equalsIgnoreCase("x") &&
-                !cells[point.x][point.y].contains("b") && !cells[point.x][point.y].contains("r");
+                !cells[point.x][point.y].contains("b") &&
+                !cells[point.x][point.y].contains("r");
     }
 
     private boolean validNeighbor(Point from, Point to, int factor) {
-        from = new Point(from);
-        from.translate(factor * (from.x - to.x), factor * (from.y - to.y));
-        return isNeighbor(to) && isNeighbor(from)/* && isNeighborForRobot(from, to, factor)*/;
+        var dest = new Point(from);
+        dest.translate(factor * (from.x - to.x), factor * (from.y - to.y));
+        if(dest.x < 0 || dest.x >= rows || dest.y < 0 || dest.y >= cols)
+            return false;
+        return isNeighbor(to) && bbfs(findRobot(), dest, false) != null;
+    }
+
+    private boolean validNeighborForDest(Point neighborOfRobot, Point realRobot) {
+        return isNeighbor(neighborOfRobot) && bbfs(neighborOfRobot, realRobot, false) != null;
     }
 
     private boolean isNeighborForRobot(Point butter, Point butterDest, int factor) {
-        return bbfs(findRobot(), new Point(factor * (butter.x - butterDest.x), factor * (butter.y - butterDest.y))) != null;
+        return bbfs(findRobot(), new Point(factor * (butter.x - butterDest.x), factor * (butter.y - butterDest.y)), false) != null;
     }
 
     public List<Point> robotPath(List<Point> butterPath) {
-        var res = new ArrayList<Point>();
-        Point p1 = null;
-        var robot = findRobot();
-        getInfo()[robot.x][robot.y] = 15;
-        for (int i = 0; i < butterPath.size() - 1; i++) {
-            p1 = butterPath.get(i);
-            var p2 = butterPath.get(i + 1);
-            var dest = new Point(2 * p1.x - p2.x, 2 * p1.y - p2.y);
-            var path = bbfs(robot, dest);
-            if (path == null) {
-                acquire("begin-dls");
-                info = null;
-                return null;
+        try {
+            var res = new ArrayList<Point>();
+            Point p1 = null;
+            var robot = findRobot();
+            getInfo()[robot.x][robot.y] = 15;
+            for (int i = 0; i < butterPath.size() - 1; i++) {
+                p1 = butterPath.get(i);
+                var p2 = butterPath.get(i + 1);
+                var dest = new Point(2 * p1.x - p2.x, 2 * p1.y - p2.y);
+                var path = bbfs(robot, dest, true);
+                if (path == null) {
+                    acquire("step");
+                    info = null;
+                    return null;
+                }
+                res.addAll(path);
+                cells[p2.x][p2.y] += "b";
+                cells[p1.x][p1.y] = cells[p1.x][p1.y].charAt(0) + "r";
+                getInfo()[p1.x][p1.y] = 15;
+                cells[dest.x][dest.y] = String.valueOf(cells[dest.x][dest.y].charAt(0));
+                robot = p1;
             }
-            res.addAll(path);
-            cells[p2.x][p2.y] += "b";
-            cells[p1.x][p1.y] = cells[p1.x][p1.y].charAt(0) + "r";
-            getInfo()[p1.x][p1.y] = 15;
-            cells[dest.x][dest.y] = String.valueOf(cells[dest.x][dest.y].charAt(0));
-            robot = p1;
+            res.add(p1);
+            res.forEach(e -> getInfo()[e.x][e.y] = 15);
+            return res;
+        } catch (NullPointerException e) {
+            return null;
         }
-        res.add(p1);
-        res.forEach(e -> getInfo()[e.x][e.y] = 15);
-        return res;
     }
 
-    public List<Point> bbfs(Point start, Point dest) {
+    public List<Point> bbfs(Point start, Point dest, boolean showChanges) {
+        if (cells[dest.x][dest.y].contains("x"))
+            return null;
+        Optional<Point> intersect;
+        if (neighbors(start, 0, false).contains(dest)) {
+            if (!showChanges)
+                return new ArrayList<>(List.of(start, dest));
+            var path = new ArrayList<>(List.of(start, dest));
+            for (int i = 1; i < path.size(); i++) {
+                acquire("step");
+                var p = path.get(i - 1);
+                cells[p.x][p.y] = String.valueOf(cells[p.x][p.y].charAt(0));
+                var pp = path.get(i);
+                cells[pp.x][pp.y] += 'r';
+                getInfo()[pp.x][pp.y] = 15;
+            }
+            acquire("step");
+            return path;
+        }
         if (start.equals(dest)) {
-            acquire("begin-dls");
+            if (!showChanges)
+                return new ArrayList<>(List.of(start));
+            acquire("step");
             getInfo()[start.x][start.y] = 15;
             return new ArrayList<>(List.of(start));
         }
-        Optional<Point> intersect;
         var explored = new int[rows][cols];
         var queueOfStart = new ArrayDeque<>(List.of(new Node(start, null, 0)));
         var queueOfDest = new ArrayDeque<>(List.of(new Node(dest, null, 0)));
@@ -212,7 +291,6 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
         explored[dest.x][dest.y] = 2;
         while (!queueOfStart.isEmpty() && !queueOfDest.isEmpty()) {
             // expand from start
-//            acquire("begin-dls");
             nodeStart = queueOfStart.pop();
             start = nodeStart.point;
             var neighborsStart = neighbors(start, 0, false);
@@ -230,7 +308,7 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
                         pointNodeMap.put(e, node);
                     });
             // expand from dest
-//            acquire("begin-dls");
+            //            acquire("step");
             nodeDest = queueOfDest.pop();
             dest = nodeDest.point;
             var neighborsDest = neighbors(dest, 0, false);
@@ -259,36 +337,47 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
             path.add(nodeDest.point);
             nodeDest = nodeDest.parent;
         }
+        if (!showChanges)
+            return path;
         for (int i = 1; i < path.size(); i++) {
-            acquire("begin-dls");
+            acquire("step");
             var p = path.get(i - 1);
             cells[p.x][p.y] = String.valueOf(cells[p.x][p.y].charAt(0));
             var pp = path.get(i);
             cells[pp.x][pp.y] += 'r';
             getInfo()[pp.x][pp.y] = 15;
         }
-        acquire("begin-dls");
+        acquire("step");
         return path;
     }
 
     ////////////////
     public List<Point> bbfs(Point start) {
         Optional<Point> intersect;
-        var dest = nearestManhattanDest(start);
-        var queueOfStart = new ArrayDeque<>(List.of(new Node(start, null, 0)));
-        var mapOfQueueDestinations = new HashMap<Point, ArrayDeque<Node>>();
-        getDestinations().forEach(e -> mapOfQueueDestinations.put(e, new ArrayDeque<>(List.of(new Node(e, null, 0)))));
-        Node nodeStart = null, nodeDest = null;
+        Point dest;
         var pointNodeMap = new HashMap<Point, Node>();
+        var startNode = new Node(start, null, 0);
+        pointNodeMap.put(start, startNode);
+        var queueOfStart = new ArrayDeque<>(List.of(startNode));
+        var mapOfQueueDestinations = new HashMap<Point, ArrayDeque<Node>>();
+        getDestinations().forEach(e -> {
+            var node = new Node(e, null, 0);
+            mapOfQueueDestinations.put(e, new ArrayDeque<>(List.of(node)));
+            pointNodeMap.put(e, node);
+        });
+        Node nodeStart = null, nodeDest = null;
         boolean find = false;
         getInfo()[start.x][start.y] = 1;
-        for (var d : mapOfQueueDestinations.keySet())
-            getInfo()[d.x][d.y] = 2;
+        for (var d : mapOfQueueDestinations.keySet()) getInfo()[d.x][d.y] = 2;
+        boolean firstRound = true;
         while (!queueOfStart.isEmpty() && !mapOfQueueDestinations.isEmpty()) {
             // expand from start
-            acquire("begin-dls");
+            acquire("step");
             nodeStart = queueOfStart.pop();
             start = nodeStart.point;
+            setCellAttribute(start, 'b');
+            if (!firstRound)
+                setCellAttribute(nodeStart.parent.point, 'r');
             var neighborsStart = neighbors(start);
             if ((intersect = neighborsStart.stream().filter(e -> getInfo()[e.x][e.y] == 2).findFirst()).isPresent()) {
                 nodeDest = pointNodeMap.get(intersect.get());
@@ -299,13 +388,19 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
             neighborsStart.stream().filter(e -> getInfo()[e.x][e.y] == 0)
                     .forEach(e -> {
                         getInfo()[e.x][e.y] = 10;
-                        acquire("begin-dls");
-                        getInfo()[e.x][e.y] = 1;
                         var node = new Node(e, finalNodeStart, 0);
                         queueOfStart.add(node);
                         pointNodeMap.put(e, node);
                     });
             // expand from dest
+            neighborsStart.stream().filter(e -> getInfo()[e.x][e.y] == 10).forEach(e -> {
+                acquire("step");
+                getInfo()[e.x][e.y] = 1;
+            });
+            if (!firstRound) {
+                removeCellAttribute(start);
+                removeCellAttribute(nodeStart.parent.point);
+            }
 
             var shouldRemove = new ArrayList<>();
             for (var kv : mapOfQueueDestinations.entrySet()) {
@@ -313,32 +408,51 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
                     shouldRemove.add(kv.getKey());
                     continue;
                 }
-                acquire("begin-dls");
+                acquire("step");
                 nodeDest = kv.getValue().pop();
                 dest = nodeDest.point;
-                var neighborsDest = neighborsDest(dest);
+                List<Point> neighborsDest;
+                if (!firstRound) {
+                    setCellAttribute(dest, 'r');
+                    setCellAttribute(nodeDest.parent.point, 'b');
+                    neighborsDest = neighborsDest(nodeDest.parent.point);
+                }
+                else neighborsDest = neighborsDest(dest);
+                if (firstRound)
+                    neighborsDest.removeIf(e -> bbfs(findRobot(), e, false) == null);
                 if ((intersect = neighborsDest.stream().filter(e -> getInfo()[e.x][e.y] == 1).findFirst()).isPresent()) {
                     nodeStart = pointNodeMap.get(intersect.get());
                     find = true;
                     break;
                 }
                 Node finalNodeDest = nodeDest;
+                Point finalDest = dest;
                 neighborsDest.stream().filter(e -> getInfo()[e.x][e.y] == 0)
                         .forEach(e -> {
                             getInfo()[e.x][e.y] = 10;
-                            acquire("begin-dls");
-                            getInfo()[e.x][e.y] = 2;
+//                            acquire("step");
+                            getInfo()[finalDest.x][finalDest.y] = 2;
                             var node = new Node(e, finalNodeDest, 0);
                             kv.getValue().add(node);
                             pointNodeMap.put(e, node);
                         });
+                if (!firstRound) {
+                    removeCellAttribute(dest);
+                    removeCellAttribute(nodeDest.parent.point);
+                }
             }
+            if(find)
+                break;
             //noinspection SuspiciousMethodCalls
             shouldRemove.forEach(mapOfQueueDestinations::remove);
+            if (firstRound)
+                removeCellAttribute(findRobot());
+            firstRound = false;
         }
         if (!find) {
-            acquire("begin-dls");
+            acquire("step");
             info = null;
+            cells = safeCellsCopy;
             return null;
         }
         var path = new LinkedList<Point>();
@@ -351,10 +465,11 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
             nodeDest = nodeDest.parent;
         }
         path.forEach(e -> getInfo()[e.x][e.y] = 16);
-        acquire("begin-dls");
+        acquire("step");
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++)
                 info[i][j] = info[i][j] == 16 ? 16 : 0;
+        cells = safeCellsCopy;
         return path;
     }
     ////////////////
@@ -365,12 +480,12 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
         fringe.add(new Node(start, null, manhattan(start, dest)));
         Node node = null;
         while (!fringe.isEmpty()) {
-//            acquire("begin-dls");
+            acquire("step");
             node = fringe.poll();
             assert node != null;
             start = node.point;
             getInfo()[start.x][start.y] = 10;
-//            acquire("begin-dls");
+            acquire("step");
             getInfo()[start.x][start.y] = 1;
             if (isGoal(start))
                 break;
@@ -415,6 +530,14 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
 
     private static int manhattan(Point start, Point dest) {
         return Math.abs(start.x - dest.x) + Math.abs(start.y - dest.y);
+    }
+
+    private void removeCellAttribute(Point point) {
+        cells[point.x][point.y] = String.valueOf(cells[point.x][point.y].charAt(0));
+    }
+
+    private void setCellAttribute(Point point, char attribute) {
+        cells[point.x][point.y] = cells[point.x][point.y].charAt(0) + "" + attribute;
     }
 
     public String[][] getCells() {

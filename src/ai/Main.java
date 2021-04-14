@@ -18,13 +18,7 @@ public class Main {
         PathFinderVisualPanel p;
         gp.addRender(p = new PathFinderVisualPanel(gp, "test3.txt"));
         f.add(gp);
-        var b = new JButton("Step");
-        b.addActionListener(e -> {
-            p.getAlgorithm().release("begin-dls");
-            f.repaint();
-            gp.getRenderManager().asyncTickCounterChange(1);
-        });
-        var timer = p.getAlgorithm().getReleaseTimer("begin-dls", 40);
+        var timer = p.getAlgorithm().getReleaseTimer("step", 40);
         gp.addMouseListener(new MouseAdapter() {
             private boolean running = false;
 
@@ -38,7 +32,7 @@ public class Main {
                     else
                         timer.stop();
                 } else if (e.isShiftDown()) {
-                    p.getAlgorithm().release("begin-dls");
+                    p.getAlgorithm().release("step");
                 }
             }
 
@@ -50,7 +44,6 @@ public class Main {
 
         });
         gp.start();
-//        p.getAlgorithm().ignoreSemaphore("begin-dls");
         SwingUtilities.invokeLater(f);
     }
 }

@@ -66,7 +66,7 @@ public class Main {
         //        gp.addRender(new Mapper2DVisualization(gp, (x, y) -> new Point2D(x*x-y*y, x*x+y*y)));
         //        gp.addRender(new PuzzleGame(gp, 4, 4));
         //        gp.setFps(1_000_000);
-        //        gp.addRender(new Area(gp, "t.obj"));
+                gp.addRender(new Area(gp, "t.obj"));
         //        gp.start();
         //        gp.start();
 //                gp.addRender(new PathFinder(gp, 30, 30, new Point(2, 5), new Point(25, 20)));

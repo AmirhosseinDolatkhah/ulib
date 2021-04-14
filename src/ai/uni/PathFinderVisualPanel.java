@@ -13,17 +13,13 @@ import java.util.List;
 
 public class PathFinderVisualPanel extends GridPlain2D {
 
-    private final String[][] cells;
     private final Grid2DPathFinderAlgorithm algorithm;
 
     public PathFinderVisualPanel(CoordinatedScreen cs, String[][] cells) {
         super(cs, cells.length, cells[0].length);
-        this.cells = cells;
         var rows = cells.length;
         var cols = cells[0].length;
         algorithm = new Grid2DPathFinderAlgorithm(cells);
-//        Utils.checkTimePerform(e -> algorithm.aStar(new Point(9, 4)), false, "ids",
-//                ee -> {ee.forEach(e -> algorithm.getInfo()[e.x][e.y] = 15); System.out.println("path len: " + ee.size());});
         Utils.checkTimePerform(e -> algorithm.robotPath(algorithm.bbfs(new Point(1, 2))), false, "ids",
                 ee -> {if (ee != null) System.out.println("path len: " + ee.size());});
         for (int i = 0; i < rows; i++)
@@ -32,7 +28,7 @@ public class PathFinderVisualPanel extends GridPlain2D {
                 int finalI = i;
                 int finalJ = j;
                 tile.setColorFunc(() -> switch (algorithm.getInfo()[finalI][finalJ]) {
-                    case 0 -> colorOf(cells[finalI][finalJ]);
+                    case 0 -> colorOf(algorithm.getCells()[finalI][finalJ]);
                     case 1, 2 -> Color.BLUE;
                     case -1 -> Color.GREEN;
                     case 10 -> Color.YELLOW;
@@ -43,7 +39,7 @@ public class PathFinderVisualPanel extends GridPlain2D {
                 tile.setTextFunction(new StringSupplier() {
                     @Override
                     public String getText() {
-                        return textOf(cells[finalI][finalJ]);
+                        return textOf(algorithm.getCells()[finalI][finalJ]);
                     }
 
                     @Override
@@ -56,7 +52,7 @@ public class PathFinderVisualPanel extends GridPlain2D {
                         return new Font(Font.SANS_SERIF, Font.BOLD, 20);
                     }
                 });
-                tile.setVisible(() -> visibilityOf(cells[finalI][finalJ]));
+                tile.setVisible(() -> visibilityOf(algorithm.getCells()[finalI][finalJ]));
             }
     }
 
@@ -95,34 +91,6 @@ public class PathFinderVisualPanel extends GridPlain2D {
         return algorithm;
     }
 
-    private static boolean goalTest(String[][] cells, Point point) {
-        return cells[point.x][point.y].equalsIgnoreCase("p");
-    }
-
-    private static List<Point> neighbors(String[][] cells, Point point) {
-        var res = new ArrayList<Point>();
-        point.translate(1, 0);
-        if (isNeighbor(cells, point))
-            res.add(new Point(point));
-        point.translate(-2, 0);
-        if (isNeighbor(cells, point))
-            res.add(new Point(point));
-        point.translate(1, 1);
-        if (isNeighbor(cells, point))
-            res.add(new Point(point));
-        point.translate(0, -2);
-        if (isNeighbor(cells, point))
-            res.add(new Point(point));
-        point.translate(0, 1);
-        return res;
-    }
-
-    private static boolean isNeighbor(String[][] cells, Point point) {
-        return point.x > -1 && point.x < cells.length &&
-                point.y > -1 && point.y < cells[0].length &&
-                !cells[point.x][point.y].equalsIgnoreCase("x");
-    }
-
     public static String[][] loadFromFile(String path) throws FileNotFoundException {
         var scanner = new Scanner(new File(path));
         var dim = Arrays.stream(scanner.nextLine().trim().split("\t")).mapToInt(Integer::parseInt).toArray();
@@ -131,9 +99,5 @@ public class PathFinderVisualPanel extends GridPlain2D {
         while (scanner.hasNextLine())
             res[counter++] = scanner.nextLine().trim().split("\t");
         return res;
-    }
-
-    public String[][] getCells() {
-        return cells;
     }
 }
