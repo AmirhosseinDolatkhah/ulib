@@ -20,8 +20,6 @@ public class PathFinderVisualPanel extends GridPlain2D {
         var rows = cells.length;
         var cols = cells[0].length;
         algorithm = new Grid2DPathFinderAlgorithm(cells);
-        Utils.checkTimePerform(e -> algorithm.robotPath(algorithm.bbfs(new Point(1, 2))), false, "ids",
-                ee -> {if (ee != null) System.out.println("path len: " + ee.size());});
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++) {
                 var tile = getTile(i, j);
@@ -32,7 +30,7 @@ public class PathFinderVisualPanel extends GridPlain2D {
                     case 1, 2 -> Color.BLUE;
                     case -1 -> Color.GREEN;
                     case 10 -> Color.YELLOW;
-                    case 15 -> Color.CYAN;
+                    case 15, -15 -> Color.CYAN;
                     case 16 -> Color.RED;
                     default -> Color.WHITE;
                 });

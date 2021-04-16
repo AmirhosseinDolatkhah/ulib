@@ -32,6 +32,9 @@ public interface SemaphoreBase<K> {
             e.printStackTrace();
         }
     }
+    default int drainPermits(K key) {
+        return getSemaphore(key).drainPermits();
+    }
     default void release(K key) {
         release(key, 1);
     }

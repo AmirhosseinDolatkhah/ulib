@@ -513,6 +513,8 @@ public final class Jurl {
         argsMap.put(key, value);
         if (key.equals("headers")) {
             var list = value.stream().filter(e -> unQuot(e).startsWith("content-type")).collect(Collectors.toList());
+            if (list.isEmpty())
+                return;
             var kv = list.get(list.size() - 1).split(":");
             setArg(kv[0], kv[1]);
         }
@@ -612,7 +614,44 @@ public final class Jurl {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        var jurl = new Jurl(args);
+        var jurl = new Jurl(new Scanner(System.in).nextLine().split(" "));
+        /*
+         * https://www.httpbin.org/get
+         * https://www.httpbin.org/image/jpeg --method get --file download.jpeg
+         * https://www.httpbin.org/image/png --method get --file download.png
+         * https://www.httpbin.org/get -H Key:Value,Key2:Value2
+         *
+         * https://www.httpbin.org/post --file ulib.iml
+         * https://www.httpbin.org/post --method post
+         * https://www.httpbin.org/post --json {"A":"B"}
+         * https://www.httpbin.org/post --data amir=hossein&name=ali
+         * https://www.httpbin.org/post --file this3.png
+         * https://www.httpbin.org/post --method get --file t.obj
+         * https://www.httpbin.org/post -M post -H Content-Type:application/x-www-form-urlencoded --json Name=Amir&Family=Dolatkhah
+         * https://www.httpbin.org/post -M post -H "Content-Type:application/json" -D {"Name":"Amir","Family":"Dolatkhah"}
+         *
+         * https://www.httpbin.org/patch --method patch
+         * https://www.httpbin.org/patch --method patch --json {"A":"B"}
+         * https://www.httpbin.org/patch --method patch --file ulib.iml
+         *
+         * https://www.httpbin.org/put --method put --data amir=hossein&name=ali
+         * https://www.httpbin.org/put --method put --json {"A":"B"}
+         * https://www.httpbin.org/put --method put --file ulib.iml
+         *
+         * https://httpbin.org/delete -M delete -D Name=Arman&Family=Feizy
+         * https://www.httpbin.org/delete --method delete
+         *
+         * http://dl.subdlrica.xyz/musicvideos/George%20Michael/George%20Michael%20-%20Careless%20Whisper%20(Official%20Video).mp4
+         * https://www.un.org/Depts/los/convention_agreements/texts/unclos/unclos_e.pdf
+         *
+         * https://www.un.org/Depts/los/convention_agreements/texts/unclos/unclos_e.pdf --timeout 5
+         *
+         * google.com
+         * htttp://google.com
+         * http://gpp.commm
+         * http:/gpp.commm
+         * http//google.com
+         */
         var response = jurl.handleHttpRequest0();
         System.out.println("-----Status Message-----");
         System.out.println("status:: " + response.statusCode() + " " + httpCodeMessages.getOrDefault(response.statusCode(), "Unknown"));
