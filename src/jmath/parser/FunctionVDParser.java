@@ -177,7 +177,7 @@ public class FunctionVDParser implements Parser<FunctionVD> {
                 case SINE:
                     return ps -> sin(p.valueAt(ps));
                 case COSINE:
-                return ps -> cos(p.valueAt(ps));
+                    return ps -> cos(p.valueAt(ps));
                 case TANGENT:
                     return ps -> tan(p.valueAt(ps));
                 case COTANGENT:

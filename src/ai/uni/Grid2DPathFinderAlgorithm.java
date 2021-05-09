@@ -38,7 +38,7 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
             System.arraycopy(cells[i], 0, safeCellsCopy[i], 0, cols);
     }
 
-    private void resetCells() {
+    protected void resetCells() {
         for (int i = 0; i < rows; i++)
             System.arraycopy(safeCellsCopy[i], 0, cells[i], 0, cols);
     }

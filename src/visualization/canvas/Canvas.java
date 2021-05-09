@@ -298,7 +298,7 @@ public class Canvas extends JPanel implements Runnable {
     }
 
     @Override
-    public synchronized void paintComponent(Graphics g) {
+    public void paintComponent(Graphics g) {
         if (g == null)
             return;
         var g2d = (Graphics2D) g;

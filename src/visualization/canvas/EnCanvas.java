@@ -6,6 +6,7 @@ import java.awt.Canvas;
 import java.awt.image.BufferStrategy;
 import java.io.Serial;
 
+@Deprecated
 public class EnCanvas extends Canvas implements Runnable {
     @Serial
     private static final long serialVersionUID = 1L;

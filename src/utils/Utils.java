@@ -1,16 +1,17 @@
 package utils;
 
+import com.sun.java.accessibility.util.AWTEventMonitor;
 import com.sun.management.OperatingSystemMXBean;
 import jmath.datatypes.functions.ColorFunction;
-import jmath.datatypes.functions.UnaryFunction;
-import jmath.datatypes.tuples.Point2D;
 import jmath.datatypes.tuples.Point3D;
-import org.jetbrains.annotations.NotNull;
+import swingutils.MainFrame;
 import visualization.canvas.*;
 import visualization.canvas.Canvas;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.RenderedImage;
@@ -18,7 +19,6 @@ import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -60,6 +60,8 @@ public final class Utils {
         robot = rbt;
     }
 
+    ///////////////////
+
     public static BufferedImage getCanvasImage(Canvas canvas) {
         var res = new BufferedImage(canvas.getWidth(), canvas.getHeight(), BufferedImage.TYPE_INT_RGB);
         var g2d = res.createGraphics();
@@ -89,7 +91,7 @@ public final class Utils {
         return Double.parseDouble(res.substring(0, res.indexOf('.') + precision + 1));
     }
 
-    public static int[] getIntRgbArray(BufferedImage bi) {
+    public static int[] getIntColorArray(BufferedImage bi) {
         return ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
     }
 
@@ -123,13 +125,13 @@ public final class Utils {
 
     public static BufferedImage createImage(int width, int height, IntBinaryOperator colorFunc, int numOfThreads) {
         var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        multiThreadIntArraySetter(getIntRgbArray(res), i -> colorFunc.applyAsInt(i / width, i % width), numOfThreads);
+        multiThreadIntArraySetter(getIntColorArray(res), i -> colorFunc.applyAsInt(i / width, i % width), numOfThreads);
         return res;
     }
 
     public static BufferedImage createImage(int width, int height, IntUnaryOperator colorFunc, int numOfThreads) {
         var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        multiThreadIntArraySetter(getIntRgbArray(res), colorFunc, numOfThreads);
+        multiThreadIntArraySetter(getIntColorArray(res), colorFunc, numOfThreads);
         return res;
     }
 
@@ -137,7 +139,7 @@ public final class Utils {
         var w = cc.getWidth();
         var h = cc.getHeight();
         var res = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        multiThreadIntArraySetter(getIntRgbArray(res),
+        multiThreadIntArraySetter(getIntColorArray(res),
                 i -> colorFunc.valueAt(cc.coordinateX(i / w), cc.coordinateY(i % w)).getRGB(), numOfThreads);
         return res;
     }
@@ -176,22 +178,48 @@ public final class Utils {
 
     public static BufferedImage createImageSingleThread(int width, int height, IntUnaryOperator colorFunc) {
         var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        var arr = getIntRgbArray(res);
+        var arr = getIntColorArray(res);
         for (int i = 0; i < arr.length; i++)
             arr[i] = colorFunc.applyAsInt(i);
         return res;
     }
 
+    public static BufferedImage toBufferedImage(Image img) {
+        return toBufferedImage(img, new Dimension(1280, 720));
+    }
+
+    public static BufferedImage toBufferedImage(Image img, Dimension dimensionIfNotRendered) {
+        if (img instanceof BufferedImage im)
+            return im;
+        BufferedImage res = new BufferedImage(img.getWidth(null) <= 0 ? dimensionIfNotRendered.width : img.getWidth(null),
+                img.getHeight(null) <= 0 ? dimensionIfNotRendered.height : img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        var g2d = res.createGraphics();
+        g2d.drawImage(img, 0, 0, null);
+        g2d.dispose();
+        return res;
+    }
+
+    public static BufferedImage getBufferedImage(String path) {
+        return toBufferedImage(getImage(path));
+    }
+
     public static void affectOnImageSingleThread(BufferedImage image, IntUnaryOperator func) {
-        var pixels = getIntRgbArray(image);
+        var pixels = getIntColorArray(image);
         for (int i = 0; i < pixels.length; i++)
             pixels[i] = func.applyAsInt(pixels[i]);
     }
 
     public static void affectOnImage(BufferedImage image, IntUnaryOperator func, int numOfThreads) {
-        var pixels = getIntRgbArray(image);
+        if (numOfThreads <= 0) {
+            affectOnImageSingleThread(image, func);
+            return;
+        }
+        var pixels = getIntColorArray(image);
         multiThreadIntArraySetter(pixels, i -> func.applyAsInt(pixels[i]), numOfThreads);
     }
+
+
+    //////////////////////
 
     public static <T> AtomicReference<T> checkTimePerform(
             Task<T> task,
@@ -390,7 +418,7 @@ public final class Utils {
     }
 
     public static void saveRenderedImage(RenderedImage img, String absPath) throws IOException {
-        var dir = new File(absPath.contains("\\") ? absPath.substring(0, absPath.lastIndexOf("\\")) : absPath);
+        var dir = new File(absPath); //AHD::TODO need attention
         if (!(dir.exists() || dir.mkdirs())) {
             System.err.println("Error in Creating non existed directory: " + absPath);
             return;
@@ -470,7 +498,7 @@ public final class Utils {
         while ((s = br.readLine()) != null)
             sb.append(s).append("\n");
         br.close();
-        return sb.toString();
+        return sb.toString().trim();
     }
 
     public static String setSystemVolume(int volume) throws IOException {
@@ -617,13 +645,38 @@ public final class Utils {
         void act(T t);
     }
 
-    public static void main(String[] args) throws IOException, AWTException {
-        var gp = new Graph3DCanvas();
-        var f = new UnaryFunction(x -> sin(x)/x);
-        var points = Graph2DCanvas.getPointsOf2DArc(
-                t -> new Point2D(t/3, 10*f.valueAt(t)-10), 0, 18*PI, 0.001, gp);
-        int counter = 0;
-        while (counter++ < 100000)
-            setMousePos(points[counter % points.length]);
+    public static void main(String[] args) throws IOException, AWTException, InterruptedException {
+//        var gp = new Graph3DCanvas();
+//        var f = new UnaryFunction(x -> sin(x)/x);
+//        var points = Graph2DCanvas.getPointsOf2DArc(
+//                t -> new Point2D(t/3, 10*f.valueAt(t)-10), 0, 18*PI, 0.001, gp);
+//        int counter = 0;
+//        while (counter++ < 100000)
+//            setMousePos(points[counter % points.length]);
+        var f = new MainFrame();
+//        new Thread(() -> {
+//            try {
+//                Thread.sleep(2000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            while (true) {
+//                robot.mousePress(InputEvent.BUTTON1_MASK);
+//                robot.mouseRelease(InputEvent.BUTTON1_MASK);
+//            }
+//        }).start();
+        Toolkit.getDefaultToolkit().addAWTEventListener(e -> {
+            if (e instanceof MouseEvent me && me.getButton() == MouseEvent.BUTTON1 && me.getID() == MouseEvent.MOUSE_PRESSED) {
+                System.out.println(me.getModifiersEx());
+            }
+        }, AWTEvent.MOUSE_EVENT_MASK);
+//        var ip = new ImageCanvas(createImageSingleThread(1280, 720, i -> new Color((float) Math.tan(PI * i / 1280.0 / 720), 0.5f, 0.5f).getRGB()));
+//        f.add(ip);
+
+        f.add(new Graph3DCanvas());
+
+
+
+        SwingUtilities.invokeLater(f);
     }
 }

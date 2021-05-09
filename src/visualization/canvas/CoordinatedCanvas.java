@@ -454,8 +454,9 @@ public class CoordinatedCanvas extends Canvas implements CoordinatedScreen {
     }
 
     @Override
-    public synchronized void paintComponent(Graphics g) {
+    public void paintComponent(Graphics g) {
         super.paintComponent(g);
+
         if (!isShowInfo())
             return;
         g.drawString("ScaleX: " + round(xScale, 2) + ", ScaleY: " + round(yScale, 2), 0, (int) (infoFont.getSize() * 2.1));

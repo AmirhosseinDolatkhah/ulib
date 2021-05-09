@@ -124,11 +124,45 @@ public final class Sort {
 
     ////////////
 
+    public static void heapSort(int[] arr) {
+        int n = arr.length;
+
+        for (int i = n / 2 - 1; i >= 0; i--)
+            heapify(arr, n, i);
+
+        for (int i = n - 1; i > 0; i--) {
+            int temp = arr[0];
+            arr[0] = arr[i];
+            arr[i] = temp;
+
+            heapify(arr, i, 0);
+        }
+    }
+
+    private static void heapify(int[] arr, int n, int i) {
+        int largest = i;
+        int l = 2 * i + 1;
+        int r = 2 * i + 2;
+
+        if (l < n && arr[l] > arr[largest])
+            largest = l;
+
+        if (r < n && arr[r] > arr[largest])
+            largest = r;
+
+        if (largest != i) {
+            int swap = arr[i];
+            arr[i] = arr[largest];
+            arr[largest] = swap;
+
+            heapify(arr, n, largest);
+        }
+    }
 
 
     ////////////
     public static void main(String[] args) {
-        int len = 100_000_000;
+        int len = 1_000_000;
         var random = new int[len];
         Arrays.setAll(random, i -> (int) (Math.random() * Integer.MAX_VALUE));
         var clone = new int[len];
@@ -138,6 +172,9 @@ public final class Sort {
 
         System.arraycopy(random, 0, clone, 0, len);
         Utils.checkTimePerform(() -> mergeSort(clone), true, "Sort::mergeSort");
+
+        System.arraycopy(random, 0, clone, 0, len);
+        Utils.checkTimePerform(() -> heapSort(clone), true, "Sort::heapSort");
 
         System.arraycopy(random, 0, clone, 0, len);
         Utils.checkTimePerform(() -> quickSort(clone), true, "Sort::quickSort");
@@ -154,9 +191,4 @@ public final class Sort {
     }
 
     /////////////
-
-    @FunctionalInterface
-    private interface SortArrayFunc {
-        void sort(int[] src);
-    }
 }

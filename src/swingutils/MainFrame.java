@@ -290,7 +290,7 @@ public class MainFrame extends JFrame implements Runnable, StateBase<String, Con
 
     @Override
     public void setState(String stateName) {
-        setContentPane(stateMap.get(currentState = stateName));
+        setContentPane(stateMap.getOrDefault(currentState = stateName, getContentPane()));
         repaint();
         revalidate();
     }

@@ -66,21 +66,21 @@ public final class Runner {
                             case A_STAR -> algo.aStar(finalButter);
                         }), true, algorithm.toString(),
                         path -> {
+                            algo.resetCells();
                             if (path == null) {
                                 System.err.println("Path not found.");
                                 notPossible.add(finalButter);
                                 return;
                             }
-                            path.forEach(point -> {
-                                res.put(point, new int[] { stepCounter.get(),
-                                        res.getOrDefault(point, new int[] { stepCounter.getAndIncrement(), 0 })[1]
-                                                + 1 });
-                            });
+                            path.forEach(point -> res.put(point, new int[] { stepCounter.get(),
+                                    res.getOrDefault(point, new int[] { stepCounter.getAndIncrement(), 0 })[1]
+                                            + 1 }));
                             notPossible.clear();
                         }
                 );
             }
             timer.stop();
+            algo.drainPermits("step");
             System.out.println("END");
         }, true, "TheMainThreadOfAlgorithms");
 
@@ -161,9 +161,5 @@ public final class Runner {
                 !cells[point.x][point.y].contains("r") &&
                 !cells[point.x][point.y].contains("p") &&
                 !cells[point.x][point.y].contains("x");
-    }
-
-    public static void main(String[] args) throws FileNotFoundException {
-        run(PathFinderAlgorithm.IDS, "test10.txt");
     }
 }

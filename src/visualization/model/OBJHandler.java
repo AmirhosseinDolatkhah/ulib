@@ -36,13 +36,13 @@ public final class OBJHandler {
         }
         List<FlatSurface> res = new ArrayList<>(faces.size());
         faces.forEach(e -> {
-            if (e.x < 0)
+            while (e.x < 0)
                 e.x += vertexes.size() + 1;
-            if (e.y < 0)
+            while (e.y < 0)
                 e.y += vertexes.size() + 1;
-            if (e.z < 0)
+            while (e.z < 0)
                 e.z += vertexes.size() + 1;
-            if (e.w < 0)
+            while (e.w < 0)
                 e.w += vertexes.size() + 1;
             if (e.w == 0) {
                 res.add(new FlatSurface(canvas, Color.GRAY,
@@ -56,7 +56,6 @@ public final class OBJHandler {
         if (pointsS.length != 0)
             for (var ps : pointsS)
                 ps.addAll(vertexes);
-        System.out.println(res.size());
         return res;
     }
 

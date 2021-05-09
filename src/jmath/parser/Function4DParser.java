@@ -15,6 +15,8 @@ import static jmath.functions.utils.FunctionUtil.*;
 
 @SuppressWarnings("unused")
 public class Function4DParser implements Parser<Function4D> {
+    private static final Function4DParser parser = new Function4DParser();
+
     private final JComponent textField;
 
     public Function4DParser(JComponent textField) {
@@ -42,7 +44,6 @@ public class Function4DParser implements Parser<Function4D> {
         return null;
     }
 
-    @SuppressWarnings({"EnhancedSwitchMigration"})
     private Function4D doOrderOfOperations(TokenString tokens) {
         int location;
         Function4D res = null;
@@ -98,11 +99,12 @@ public class Function4DParser implements Parser<Function4D> {
                                 } else {
                                     location = scanFromRight(tokens, TokenType.VARIABLES);
                                     if (location != -1) {
-                                        switch (tokens.tokenAt(location).type) {
-                                            case X: case XX: res = (x, y, z) -> x; break;
-                                            case Y: case YY: res = (x, y, z) -> y; break;
-                                            case Z: case ZZ: res = (x, y, z) -> z; break;
-                                        }
+                                        res = switch (tokens.tokenAt(location).type) {
+                                            case X, XX -> (x, y, z) -> x;
+                                            case Y, YY -> (x, y, z) -> y;
+                                            case Z, ZZ -> (x, y, z) -> z;
+                                            default -> res;
+                                        };
                                     } else {
                                         location = scanFromRight(tokens, TokenType.NUMBER);
                                         if (location != -1) {
@@ -111,14 +113,12 @@ public class Function4DParser implements Parser<Function4D> {
                                         } else {
                                             location = scanFromRight(tokens, TokenType.CONSTANTS);
                                             if (location != -1) {
-                                                switch (tokens.tokenAt(location).type) {
-                                                    case PI:
-                                                        res = (x, y, z) -> Math.PI; break;
-                                                    case E:
-                                                        res = (x, y, z) -> Math.E; break;
-                                                    case POSITIVE_INFINITY:
-                                                        res = (x, y, z) -> Double.POSITIVE_INFINITY; break;
-                                                }
+                                                res = switch (tokens.tokenAt(location).type) {
+                                                    case PI -> (x, y, z) -> Math.PI;
+                                                    case E -> (x, y, z) -> Math.E;
+                                                    case POSITIVE_INFINITY -> (x, y, z) -> Double.POSITIVE_INFINITY;
+                                                    default -> res;
+                                                };
                                             }
                                         }
                                     }
@@ -220,9 +220,8 @@ public class Function4DParser implements Parser<Function4D> {
             if (t.type == TokenType.OPEN_PARENTHESES) {
                 openParentheses++;
             } else if (t.type == TokenType.CLOSE_PARENTHESES) {
-                if (openParentheses == 0) {
+                if (openParentheses == 0)
                     return i;
-                }
                 openParentheses--;
             }
         }
@@ -405,6 +404,6 @@ public class Function4DParser implements Parser<Function4D> {
     }
 
     public static Function4D parser(String func) {
-        return new Function4DParser().parse(func);
+        return parser.parse(func);
     }
 }
