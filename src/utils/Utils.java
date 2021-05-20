@@ -1,17 +1,13 @@
 package utils;
 
-import com.sun.java.accessibility.util.AWTEventMonitor;
 import com.sun.management.OperatingSystemMXBean;
 import jmath.datatypes.functions.ColorFunction;
 import jmath.datatypes.tuples.Point3D;
-import swingutils.MainFrame;
 import visualization.canvas.*;
 import visualization.canvas.Canvas;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.RenderedImage;
@@ -19,14 +15,13 @@ import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntUnaryOperator;
 
-import static java.lang.Math.*;
+import static utils.Utils.TextFileInfo.*;
 
 @SuppressWarnings("unused")
 public final class Utils {
@@ -631,6 +626,199 @@ public final class Utils {
         return getFileAsStringAndDelete("tmp.exe");
     }
 
+    ///// file utils
+
+    public static int fileCount(String directoryPath, String fileExtension) {
+        fileExtension = fileExtension.trim().toLowerCase();
+        while (fileExtension.startsWith("."))
+            fileExtension = fileExtension.substring(1);
+        fileExtension = "." + fileExtension;
+        var dir = new File(directoryPath);
+        if (!dir.exists())
+            return 0;
+        if (dir.isFile())
+            return directoryPath.trim().toLowerCase().endsWith(fileExtension) ? 1 : 0;
+        return fileCount(dir, fileExtension);
+    }
+
+    private static int fileCount(File dir, String fileExtension) {
+        var res = 0;
+        for (var f : Objects.requireNonNull(dir.listFiles()))
+            if (f.isFile() && f.getName().trim().toLowerCase().endsWith(fileExtension)) {
+                res++;
+            } else {
+                res += fileCount(f, fileExtension);
+            }
+        return res;
+    }
+
+    public static void splitTextFile(String textFilePath, int numOfEachPartLine) throws IOException {
+        var scanner = new Scanner(new File(textFilePath));
+        var lineCounter = 0;
+        var fileCounter = 0;
+        FileWriter writer = null;
+        var extension = getExtensionOfFile(textFilePath).orElse("");
+        textFilePath = textFilePath.substring(0, textFilePath.lastIndexOf("." + extension));
+        while (scanner.hasNextLine()) {
+            if (lineCounter++ % numOfEachPartLine == 0) {
+                if (writer != null)
+                    writer.close();
+                writer = new FileWriter(textFilePath + "-part" + fileCounter++ + "." + extension);
+            }
+            writer.append(scanner.nextLine()).append("\n");
+        }
+        if (writer != null)
+            writer.close();
+        scanner.close();
+    }
+
+    public static Optional<String> getExtensionOfFile(String filename) {
+        return Optional.ofNullable(filename)
+                .filter(f -> f.contains("."))
+                .map(f -> f.substring(filename.lastIndexOf(".") + 1));
+    }
+
+    public static Map<String, Map<TextFileInfo, Integer>> getTextFileAnalysis(String directoryPath, String textFileExtension) {
+        textFileExtension = textFileExtension.trim().toLowerCase();
+        var dir = new File(directoryPath);
+        if (!dir.exists())
+            return new HashMap<>();
+        if (dir.isFile() && dir.getName().trim().toLowerCase().endsWith(textFileExtension))
+            return new HashMap<>(Map.of(directoryPath, Objects.requireNonNull(getTextFileInfo(directoryPath))));
+        if (dir.isFile())
+            return new HashMap<>();
+        return getTextFileAnalysis(dir, textFileExtension);
+    }
+
+    private static Map<String, Map<TextFileInfo, Integer>> getTextFileAnalysis(File dir, String extension) {
+        var res = new HashMap<String, Map<TextFileInfo, Integer>>();
+        for (var f : Objects.requireNonNull(dir.listFiles()))
+            if (f.isFile() && f.getName().trim().toLowerCase().endsWith(extension)) {
+                res.put(f.getPath(), getTextFileInfo(f.getPath()));
+            } else if (f.isDirectory()) {
+                res.putAll(getTextFileAnalysis(f, extension));
+            }
+        return res;
+    }
+
+    public static Map<TextFileInfo, Integer> getTextFileInfo(String filePath) {
+        int numOfLines = 0;
+        int numOfEmptyLines = 0;
+        int numOfCharacters = 0;
+        int numOfDigits = 0;
+        int numOfAlphabetic = 0;
+        int numOfWhiteSpaces = 0;
+        int numOfLowerCases = 0;
+        int numOfUpperCases = 0;
+        int numOfLetters = 0;
+        int numOfComments = 0;
+
+        boolean multiLineComment = false;
+
+        var file = new File(filePath);
+        if (!file.exists() || file.isDirectory())
+            return null;
+        try (var reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                numOfLines++;
+                for (var ch : line.toCharArray()) {
+                    if (Character.isAlphabetic(ch))
+                        numOfAlphabetic++;
+                    if (Character.isDigit(ch))
+                        numOfDigits++;
+                    if (Character.isWhitespace(ch))
+                        numOfWhiteSpaces++;
+                    if (Character.isUpperCase(ch))
+                        numOfUpperCases++;
+                    if (Character.isLowerCase(ch))
+                        numOfLowerCases++;
+                    if (Character.isLetter(ch))
+                        numOfLetters++;
+                    numOfCharacters++;
+                }
+
+                var trim = line.trim();
+                if (trim.isEmpty()) {
+                    numOfEmptyLines++;
+                    continue;
+                }
+                if (trim.startsWith("//") && !multiLineComment)
+                    numOfComments++;
+                if (trim.startsWith("/*") && !multiLineComment)
+                    multiLineComment = true;
+                if (multiLineComment)
+                    numOfComments++;
+                if (trim.endsWith("*/"))
+                    multiLineComment = false;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        numOfWhiteSpaces += numOfLines;
+        numOfCharacters += numOfLines;
+
+        return Map.of(
+                NUMBER_OF_LINES, numOfLines,
+                NUMBER_OF_ALPHABETIC, numOfAlphabetic,
+                NUMBER_OF_CHARACTERS, numOfCharacters,
+                NUMBER_OF_DIGITS, numOfDigits,
+                NUMBER_OF_COMMENT_LINES, numOfComments,
+                NUMBER_OF_LOWER_CASE_LETTERS, numOfLowerCases,
+                NUMBER_OF_UPPER_CASE_LETTERS, numOfUpperCases,
+                NUMBER_OF_EMPTY_LINES, numOfEmptyLines,
+                NUMBER_OF_WHITE_SPACES, numOfWhiteSpaces,
+                NUMBER_OF_LETTERS, numOfLetters
+            );
+    }
+
+    public enum TextFileInfo {
+        NUMBER_OF_LINES,
+        NUMBER_OF_EMPTY_LINES,
+        NUMBER_OF_COMMENT_LINES,
+        NUMBER_OF_CHARACTERS,
+        NUMBER_OF_DIGITS,
+        NUMBER_OF_WHITE_SPACES,
+        NUMBER_OF_ALPHABETIC,
+        NUMBER_OF_UPPER_CASE_LETTERS,
+        NUMBER_OF_LOWER_CASE_LETTERS,
+        NUMBER_OF_LETTERS
+    }
+
+    public static void computeMetrics(String dir) {
+        int lineCounter = 0;
+        int emptyCounter = 0;
+        var map = getTextFileAnalysis(dir, "java");
+        Map.Entry<String, Integer> max1 = Map.entry("", Integer.MIN_VALUE);
+        Map.Entry<String, Integer> max2 = Map.entry("", Integer.MIN_VALUE);
+        Map.Entry<String, Integer> min1 = Map.entry("", Integer.MAX_VALUE);
+        Map.Entry<String, Integer> min2 = Map.entry("", Integer.MAX_VALUE);
+        for (var kv : map.entrySet()) {
+            var nl = kv.getValue().get(NUMBER_OF_LINES);
+            var nel = kv.getValue().get(NUMBER_OF_EMPTY_LINES);
+            lineCounter += nl;
+            emptyCounter += nel;
+
+            if (max1.getValue() < nl)
+                max1 = Map.entry(kv.getKey(), nl);
+            if (max2.getValue() < nl - nel)
+                max2 = Map.entry(kv.getKey(), nl - nel);
+            if (min1.getValue() > nl)
+                min1 = Map.entry(kv.getKey(), nl);
+            if (min2.getValue() > nl - nel)
+                min2 = Map.entry(kv.getKey(), nl - nel);
+        }
+
+        System.out.println("Avg of num of lines: " + (lineCounter / map.size()));
+        System.out.println("Avg of num of lines: (without empty lines) " + ((lineCounter - emptyCounter) / map.size()));
+
+        System.out.println("Max num of line: " + max1.getKey() + "   " + max1.getValue());
+        System.out.println("Max num of line: (without empty) " + max2.getKey() + "   " + max2.getValue());
+
+        System.out.println("Min num of line: " + min1.getKey() + "   " + min1.getValue());
+        System.out.println("Min num of line: (without empty) " + min2.getKey() + "   " + min2.getValue());
+    }
+
     //////////////////////
 
     private Utils() {}
@@ -646,37 +834,6 @@ public final class Utils {
     }
 
     public static void main(String[] args) throws IOException, AWTException, InterruptedException {
-//        var gp = new Graph3DCanvas();
-//        var f = new UnaryFunction(x -> sin(x)/x);
-//        var points = Graph2DCanvas.getPointsOf2DArc(
-//                t -> new Point2D(t/3, 10*f.valueAt(t)-10), 0, 18*PI, 0.001, gp);
-//        int counter = 0;
-//        while (counter++ < 100000)
-//            setMousePos(points[counter % points.length]);
-        var f = new MainFrame();
-//        new Thread(() -> {
-//            try {
-//                Thread.sleep(2000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//            while (true) {
-//                robot.mousePress(InputEvent.BUTTON1_MASK);
-//                robot.mouseRelease(InputEvent.BUTTON1_MASK);
-//            }
-//        }).start();
-        Toolkit.getDefaultToolkit().addAWTEventListener(e -> {
-            if (e instanceof MouseEvent me && me.getButton() == MouseEvent.BUTTON1 && me.getID() == MouseEvent.MOUSE_PRESSED) {
-                System.out.println(me.getModifiersEx());
-            }
-        }, AWTEvent.MOUSE_EVENT_MASK);
-//        var ip = new ImageCanvas(createImageSingleThread(1280, 720, i -> new Color((float) Math.tan(PI * i / 1280.0 / 720), 0.5f, 0.5f).getRGB()));
-//        f.add(ip);
-
-        f.add(new Graph3DCanvas());
-
-
-
-        SwingUtilities.invokeLater(f);
+        computeMetrics("./");
     }
 }

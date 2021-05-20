@@ -19,7 +19,7 @@ public class GeneticAlgorithm {
         this.level = level;
         agent = new Point();
         solutions = new HashMap<>();
-        fillPopulationRandomly(30);
+        fillPopulationRandomly(300);
     }
 
     public void nextGeneration() {
@@ -103,7 +103,7 @@ public class GeneticAlgorithm {
             mutate();
         }
 
-        private int fitness(boolean addSolutions) {
+        public int fitness(boolean addSolutions) {
             int fitness = 0;
             var win = true;
             for (int i = 1; i < data.length; i++) {
@@ -125,7 +125,7 @@ public class GeneticAlgorithm {
             }
             if (data[data.length - 1] == 1)
                 fitness += 2;
-            return fitness;
+            return Math.max(fitness, 0);
         }
 
         @Override

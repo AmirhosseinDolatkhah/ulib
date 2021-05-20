@@ -3,6 +3,9 @@ import jmath.datatypes.functions.Surface;
 import jmath.datatypes.graph.Graph;
 import jmath.datatypes.tuples.Point2D;
 import jmath.datatypes.tuples.Point3D;
+import lc.kra.system.mouse.GlobalMouseHook;
+import lc.kra.system.mouse.event.GlobalMouseAdapter;
+import lc.kra.system.mouse.event.GlobalMouseEvent;
 import swingutils.MainFrame;
 import utils.Utils;
 import visualization.animatedmodels.*;
@@ -22,13 +25,14 @@ import java.util.Random;
 import static java.lang.Math.*;
 
 public class Main {
+    private static boolean run = true;
 
     public static void main(String[] args) {
         var f = new MainFrame();
         var gp = new Graph3DCanvas();
         f.add(gp);
-                var g = new Graph<Point3D>();
-                g.setCs(gp);
+//                var g = new Graph<Point3D>();
+//                g.setCs(gp);
 //                g.addNode(new Point3D(0, 1, 1), "1");
 //                g.addNode(new Point3D(1, 0, 1), "2");
 //                g.addNode(new Point3D(1, 1, 0), "3");
@@ -37,6 +41,7 @@ public class Main {
 //                gp.addRender(g);
 //                gp.getRenderManager().addTick(() -> g.addNode(new Point3D(Math.random() + 5, Math.random() + 5, Math.random() + 5), String.valueOf(Math.random())));
 //                gp.getRenderManager().addTick(() -> gp.rotateShapes(0.1, 0.2, 0.3));
+//                gp.start();
 //                gp.addRender(new Curve3D(gp, Color.GREEN, 1f, -4, 4, 0.05,
 //                        x -> new Point3D(sin(x) + 2 * sin(2*x), cos(x) - 2 * cos(2*x), -sin(3*x))));
 //                gp.addRender(new Area(gp, Color.GREEN, true, 1f, 0, 2*PI, -1, 1, 0.05, 0.05,
@@ -50,10 +55,10 @@ public class Main {
 //                gp.addRender(new Area(gp, Color.BLUE, true, 1f, -Math.PI, Math.PI, -Math.PI, Math.PI, 0.05, 0.05,
 //                        Surface.circulation(x -> new Point3D(sin(x) + 2 * sin(2*x), cos(x) - 2 * cos(2*x), -sin(3*x)), t -> Math.abs(
 //                                sin(t) / 3))));
-                gp.addRender(new Area(gp, Color.BLUE, true, 1f, -Math.PI, Math.PI, -Math.PI, Math.PI, 0.05, 0.1,
-                        Surface.curveWrapping(
-                                x -> new Point3D(sin(x) + 2 * sin(2*x), cos(x) - 2 * cos(2*x), -sin(3*x)),
-                                t -> new Point2D(t / 10, cos(t) / 5))));
+//                gp.addRender(new Area(gp, Color.BLUE, true, 1f, -Math.PI, Math.PI, -Math.PI, Math.PI, 0.05, 0.1,
+//                        Surface.curveWrapping(
+//                                x -> new Point3D(sin(x) + 2 * sin(2*x), cos(x) - 2 * cos(2*x), -sin(3*x)),
+//                                t -> new Point2D(t / 10, cos(t) / 5))));
 //                gp.addRender(
 //                        new Area(gp, Color.BLUE, true, 1f, -Math.PI, Math.PI, -Math.PI, Math.PI, 1, 0.01,
 //                                Surface.curveWrapping(
@@ -102,6 +107,55 @@ public class Main {
 //                -5, 5,
 //                0.1, 0.1,
 //                (x, y) -> 1 + x*x / 20 - 0.5 * cos(2*PI*x) + y*y / 20 - 0.5 * cos(2*PI*y)));
-        SwingUtilities.invokeLater(f);
+
+        // Might throw a UnsatisfiedLinkError if the native library fails to load or a RuntimeException if hooking fails
+        GlobalMouseHook mouseHook = new GlobalMouseHook(); // Add true to the constructor, to switch to raw input mode
+
+        System.out.println("Global mouse hook successfully started, press [middle] mouse button to shutdown. Connected mice:");
+
+        for (var mouse:GlobalMouseHook.listMice().entrySet()) {
+            System.out.format("%d: %s\n", mouse.getKey(), mouse.getValue());
+        }
+
+        mouseHook.addMouseListener(new GlobalMouseAdapter() {
+
+            @Override
+            public void mousePressed(GlobalMouseEvent event)  {
+                System.out.println(event);
+                if ((event.getButtons() & GlobalMouseEvent.BUTTON_LEFT) != GlobalMouseEvent.BUTTON_NO
+                        && (event.getButtons() & GlobalMouseEvent.BUTTON_RIGHT) != GlobalMouseEvent.BUTTON_NO) {
+                    System.out.println("Both mouse buttons are currently pressed!");
+                }
+                if (event.getButton()==GlobalMouseEvent.BUTTON_MIDDLE) {
+                    run = false;
+                }
+            }
+
+            @Override
+            public void mouseReleased(GlobalMouseEvent event)  {
+                System.out.println(event);
+            }
+
+            @Override
+            public void mouseMoved(GlobalMouseEvent event) {
+                System.out.println(event);
+            }
+
+            @Override
+            public void mouseWheel(GlobalMouseEvent event) {
+                System.out.println(event);
+            }
+        });
+
+        try {
+            while(run) {
+                Thread.sleep(128);
+            }
+        } catch(InterruptedException e) {
+            //Do nothing
+        } finally {
+            mouseHook.shutdownHook();
+        }
+//        SwingUtilities.invokeLater(f);
     }
 }

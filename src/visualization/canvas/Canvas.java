@@ -10,12 +10,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.lang.management.ManagementFactory;
-import java.util.ConcurrentModificationException;
 
 @SuppressWarnings("unused")
 public class Canvas extends JPanel implements Runnable {
     public static final int DEFAULT_REDRAW_DELAY = 4;
-    private static int numberOfPanel = 0;
+    private static int numberOfPanels = 0;
     private final Timer redrawTimer;
     protected Color backGround;
     private Image bgImage;
@@ -42,14 +41,14 @@ public class Canvas extends JPanel implements Runnable {
     private void init() {
         super.setLayout(new BorderLayout());
         setPreferredSize(new Dimension(MainFrame.DEFAULT_WIDTH, MainFrame.DEFAULT_HEIGHT));
-        setName("Canvas: Id=" + numberOfPanel++);
+        setName("Canvas: Id=" + numberOfPanels++);
         backGround = Color.DARK_GRAY.darker();
         loopCounter = 0;
         delta = 0;
         timer = 1;
         bgImage = null;
         infoColor = Color.GREEN.darker();
-        infoFont = new Font("serif", Font.BOLD, 11);
+        infoFont = new Font(Font.SANS_SERIF, Font.BOLD, 11);
         showInfo = true;
         showBgImg = true;
         setFps(30);
@@ -141,6 +140,7 @@ public class Canvas extends JPanel implements Runnable {
     }
 
     public synchronized void start() {
+        resetLoopInfo();
         lastTime = System.nanoTime();
         redrawTimer.start();
     }
@@ -343,10 +343,8 @@ public class Canvas extends JPanel implements Runnable {
         lastTime = now;
         boolean flag = delta >= 1;
 
-        while (delta >= 1) {
+        while (delta-- >= 1)
             camera.tick();
-            delta--;
-        }
 
         if (flag)
             repaint();

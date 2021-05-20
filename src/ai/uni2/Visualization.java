@@ -17,7 +17,7 @@ public class Visualization implements Render {
     private static final Image mImage = new ImageIcon("tmp/m.jpg").getImage();
     private static final Image lImage = new ImageIcon("tmp/l.jpg").getImage();
     private static final Image gImage = new ImageIcon("tmp/g.jpg").getImage();
-    private static final Image flagImage = new ImageIcon("tmp/flag.jpg").getImage();
+    private static final Image flagImage = new ImageIcon("tmp/Capture.jpg").getImage();
 
     public Visualization(CoordinatedScreen cs, String level) {
         this.level = level;

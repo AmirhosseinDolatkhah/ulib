@@ -4,6 +4,7 @@ import jmath.datatypes.functions.Function2D;
 import jmath.datatypes.functions.Function4D;
 import jmath.datatypes.functions.Mapper3D;
 import jmath.datatypes.matrix.MatUtils;
+import org.jetbrains.annotations.NotNull;
 import visualization.canvas.CoordinatedCanvas;
 import visualization.canvas.CoordinatedScreen;
 
@@ -39,7 +40,7 @@ public class Point3D extends SortableTuple<Double> implements Comparable<Point3D
         this(0, 0, 0);
     }
 
-    public Point3D(Point3D p) {
+    public Point3D(@NotNull Point3D p) {
         this(p.x, p.y, p.z);
     }
 
@@ -87,7 +88,7 @@ public class Point3D extends SortableTuple<Double> implements Comparable<Point3D
         return x * x + y * y + z * z;
     }
 
-    public Point3D set(Point3D p) {
+    public Point3D set(@NotNull Point3D p) {
         x = p.x;
         y = p.y;
         z = p.z;
