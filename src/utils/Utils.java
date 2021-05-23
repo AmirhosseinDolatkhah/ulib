@@ -3,6 +3,9 @@ package utils;
 import com.sun.management.OperatingSystemMXBean;
 import jmath.datatypes.functions.ColorFunction;
 import jmath.datatypes.tuples.Point3D;
+import org.apache.pdfbox.cos.COSDocument;
+import org.apache.pdfbox.multipdf.PDFMergerUtility;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import visualization.canvas.*;
 import visualization.canvas.Canvas;
 
@@ -834,6 +837,28 @@ public final class Utils {
     }
 
     public static void main(String[] args) throws IOException, AWTException, InterruptedException {
-        computeMetrics("./");
+        //Loading an existing PDF document
+        File file1 = new File("Ray Tracing in a Weekend.pdf");
+
+        File file2 = new File("Ray Tracing_ The Next Week.pdf");
+
+        File file3 = new File("Ray Tracing_ the Rest of Your Life.pdf");
+
+        //Instantiating PDFMergerUtility class
+        PDFMergerUtility PDFmerger = new PDFMergerUtility();
+
+        //Setting the destination file
+        PDFmerger.setDestinationFileName("merged.pdf");
+
+        //adding the source files
+        PDFmerger.addSource(file1);
+        PDFmerger.addSource(file2);
+        PDFmerger.addSource(file3);
+
+        //Merging the two documents
+        PDFmerger.mergeDocuments(null);
+        System.out.println("Documents merged");
+
+        //Closing the documents
     }
 }
