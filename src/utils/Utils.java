@@ -3,9 +3,12 @@ package utils;
 import com.sun.management.OperatingSystemMXBean;
 import jmath.datatypes.functions.ColorFunction;
 import jmath.datatypes.tuples.Point3D;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.cos.COSDocument;
+import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import visualization.canvas.*;
 import visualization.canvas.Canvas;
 
@@ -822,7 +825,32 @@ public final class Utils {
         System.out.println("Min num of line: (without empty) " + min2.getKey() + "   " + min2.getValue());
     }
 
-    //////////////////////
+    /////// pdf file utils
+
+    public static void pdfFileMerger(Collection<File> pdfFiles, String destination) throws IOException {
+        var pmu = new PDFMergerUtility();
+        for (var pdfFile : pdfFiles)
+            pmu.addSource(pdfFile);
+        pmu.setDestinationFileName(destination);
+        pmu.mergeDocuments(null);
+        System.err.println("AHD:: Merge done");
+    }
+
+    public static void pdfFileMerger(String destinationFile, File... files) throws IOException {
+        pdfFileMerger(Arrays.asList(files), destinationFile);
+    }
+
+    public static void pdfFileMerger(String destination, String... files) throws IOException {
+        pdfFileMerger(Arrays.stream(files).map(File::new).toList(), destination);
+    }
+
+    public static String getTextOfPdfFile(String pdfFilePath) throws IOException {
+        return new PDFTextStripper().getText(Loader.loadPDF(new File(pdfFilePath), (MemoryUsageSetting) null));
+    }
+
+
+
+    ////////////
 
     private Utils() {}
 
@@ -840,24 +868,7 @@ public final class Utils {
         //Loading an existing PDF document
         File file1 = new File("Ray Tracing in a Weekend.pdf");
 
-        File file2 = new File("Ray Tracing_ The Next Week.pdf");
-
-        File file3 = new File("Ray Tracing_ the Rest of Your Life.pdf");
-
-        //Instantiating PDFMergerUtility class
-        PDFMergerUtility PDFmerger = new PDFMergerUtility();
-
-        //Setting the destination file
-        PDFmerger.setDestinationFileName("merged.pdf");
-
-        //adding the source files
-        PDFmerger.addSource(file1);
-        PDFmerger.addSource(file2);
-        PDFmerger.addSource(file3);
-
-        //Merging the two documents
-        PDFmerger.mergeDocuments(null);
-        System.out.println("Documents merged");
+        System.out.println(getTextOfPdfFile("Ray Tracing in a Weekend.pdf"));
 
         //Closing the documents
     }
