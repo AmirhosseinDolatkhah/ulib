@@ -1,4 +1,4 @@
-package algo;
+package utils.annotation;
 
 public @interface Algorithm {
     String SEARCH = "Search";

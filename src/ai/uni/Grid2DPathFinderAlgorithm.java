@@ -1,8 +1,7 @@
 package ai.uni;
 
 
-import algo.Algorithm;
-import jmath.datatypes.tuples.Point3D;
+import utils.annotation.Algorithm;
 import org.jetbrains.annotations.NotNull;
 import utils.SemaphoreBase;
 

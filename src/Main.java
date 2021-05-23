@@ -1,14 +1,8 @@
-import jmath.datatypes.functions.Arc3D;
 import jmath.datatypes.functions.Surface;
-import jmath.datatypes.graph.Graph;
-import jmath.datatypes.tuples.Point2D;
-import jmath.datatypes.tuples.Point3D;
 import lc.kra.system.mouse.GlobalMouseHook;
 import lc.kra.system.mouse.event.GlobalMouseAdapter;
 import lc.kra.system.mouse.event.GlobalMouseEvent;
 import swingutils.MainFrame;
-import utils.Utils;
-import visualization.animatedmodels.*;
 import visualization.canvas.Graph3DCanvas;
 import visualization.canvas.ImageCanvas;
 import visualization.shapes.shape3d.Area;
@@ -44,8 +38,8 @@ public class Main {
 //                gp.start();
 //                gp.addRender(new Curve3D(gp, Color.GREEN, 1f, -4, 4, 0.05,
 //                        x -> new Point3D(sin(x) + 2 * sin(2*x), cos(x) - 2 * cos(2*x), -sin(3*x))));
-//                gp.addRender(new Area(gp, Color.GREEN, true, 1f, 0, 2*PI, -1, 1, 0.05, 0.05,
-//                        Surface.mobius()));
+                gp.addRender(new Area(gp, Color.GREEN, true, 1f, 0, 2*PI, -1, 1, 0.05, 0.05,
+                        Surface.mobius()));
 //                        gp.addRender(new Area(gp, Color.GREEN, true, 1f, 0, PI, 0, 2*PI, 0.05, 0.05,
 //                                Surface.kleinBottle()));
 
@@ -109,53 +103,53 @@ public class Main {
 //                (x, y) -> 1 + x*x / 20 - 0.5 * cos(2*PI*x) + y*y / 20 - 0.5 * cos(2*PI*y)));
 
         // Might throw a UnsatisfiedLinkError if the native library fails to load or a RuntimeException if hooking fails
-        GlobalMouseHook mouseHook = new GlobalMouseHook(); // Add true to the constructor, to switch to raw input mode
-
-        System.out.println("Global mouse hook successfully started, press [middle] mouse button to shutdown. Connected mice:");
-
-        for (var mouse:GlobalMouseHook.listMice().entrySet()) {
-            System.out.format("%d: %s\n", mouse.getKey(), mouse.getValue());
-        }
-
-        mouseHook.addMouseListener(new GlobalMouseAdapter() {
-
-            @Override
-            public void mousePressed(GlobalMouseEvent event)  {
-                System.out.println(event);
-                if ((event.getButtons() & GlobalMouseEvent.BUTTON_LEFT) != GlobalMouseEvent.BUTTON_NO
-                        && (event.getButtons() & GlobalMouseEvent.BUTTON_RIGHT) != GlobalMouseEvent.BUTTON_NO) {
-                    System.out.println("Both mouse buttons are currently pressed!");
-                }
-                if (event.getButton()==GlobalMouseEvent.BUTTON_MIDDLE) {
-                    run = false;
-                }
-            }
-
-            @Override
-            public void mouseReleased(GlobalMouseEvent event)  {
-                System.out.println(event);
-            }
-
-            @Override
-            public void mouseMoved(GlobalMouseEvent event) {
-                System.out.println(event);
-            }
-
-            @Override
-            public void mouseWheel(GlobalMouseEvent event) {
-                System.out.println(event);
-            }
-        });
-
-        try {
-            while(run) {
-                Thread.sleep(128);
-            }
-        } catch(InterruptedException e) {
-            //Do nothing
-        } finally {
-            mouseHook.shutdownHook();
-        }
-//        SwingUtilities.invokeLater(f);
+//        GlobalMouseHook mouseHook = new GlobalMouseHook(); // Add true to the constructor, to switch to raw input mode
+//
+//        System.out.println("Global mouse hook successfully started, press [middle] mouse button to shutdown. Connected mice:");
+//
+//        for (var mouse:GlobalMouseHook.listMice().entrySet()) {
+//            System.out.format("%d: %s\n", mouse.getKey(), mouse.getValue());
+//        }
+//
+//        mouseHook.addMouseListener(new GlobalMouseAdapter() {
+//
+//            @Override
+//            public void mousePressed(GlobalMouseEvent event)  {
+//                System.out.println(event);
+//                if ((event.getButtons() & GlobalMouseEvent.BUTTON_LEFT) != GlobalMouseEvent.BUTTON_NO
+//                        && (event.getButtons() & GlobalMouseEvent.BUTTON_RIGHT) != GlobalMouseEvent.BUTTON_NO) {
+//                    System.out.println("Both mouse buttons are currently pressed!");
+//                }
+//                if (event.getButton()==GlobalMouseEvent.BUTTON_MIDDLE) {
+//                    run = false;
+//                }
+//            }
+//
+//            @Override
+//            public void mouseReleased(GlobalMouseEvent event)  {
+//                System.out.println(event);
+//            }
+//
+//            @Override
+//            public void mouseMoved(GlobalMouseEvent event) {
+//                System.out.println(event);
+//            }
+//
+//            @Override
+//            public void mouseWheel(GlobalMouseEvent event) {
+//                System.out.println(event);
+//            }
+//        });
+//
+//        try {
+//            while(run) {
+//                Thread.sleep(128);
+//            }
+//        } catch(InterruptedException e) {
+//            //Do nothing
+//        } finally {
+//            mouseHook.shutdownHook();
+//        }
+        SwingUtilities.invokeLater(f);
     }
 }
