@@ -684,16 +684,23 @@ public final class Utils {
                 .map(f -> f.substring(filename.lastIndexOf(".") + 1));
     }
 
-    public static Map<String, Map<TextFileInfo, Integer>> getTextFileAnalysis(String directoryPath, String textFileExtension) {
+    public static Map<String, Map<TextFileInfo, Integer>> getTextFileAnalysis(String directoryPath, String textFileExtension, TextFileInfo sortedBy) {
         textFileExtension = textFileExtension.trim().toLowerCase();
         var dir = new File(directoryPath);
         if (!dir.exists())
-            return new HashMap<>();
+            return Map.of();
         if (dir.isFile() && dir.getName().trim().toLowerCase().endsWith(textFileExtension))
-            return new HashMap<>(Map.of(directoryPath, Objects.requireNonNull(getTextFileInfo(directoryPath))));
+            return Map.of(directoryPath, Objects.requireNonNull(getTextFileInfo(directoryPath)));
         if (dir.isFile())
-            return new HashMap<>();
-        return getTextFileAnalysis(dir, textFileExtension);
+            return Map.of();
+        var hold = getTextFileAnalysis(dir, textFileExtension);
+        var res = new TreeMap<String, Map<TextFileInfo, Integer>>(sortedBy == null ? null : Comparator.comparingInt(s -> -hold.get(s).get(sortedBy)));
+        res.putAll(hold);
+        return Collections.unmodifiableMap(res);
+    }
+
+    public static Map<String, Map<TextFileInfo, Integer>> getTextFileAnalysis(String directoryPath, String textFileExtension) {
+        return getTextFileAnalysis(directoryPath, textFileExtension, null);
     }
 
     private static Map<String, Map<TextFileInfo, Integer>> getTextFileAnalysis(File dir, String extension) {
@@ -848,9 +855,17 @@ public final class Utils {
         return new PDFTextStripper().getText(Loader.loadPDF(new File(pdfFilePath), (MemoryUsageSetting) null));
     }
 
+    //////////// mp3 file
 
+    public static void mp3Merger(String destination, String... mp3Files) throws IOException {
+        var sb = new StringBuilder("copy /b \"");
+        for (var f : mp3Files)
+            sb.append(f).append("\" \"");
+        Runtime.getRuntime().exec(sb.substring(0, sb.length() - 1) + " -o " + destination);
+    }
 
-    ////////////
+    ///////////
+
 
     private Utils() {}
 
@@ -866,10 +881,8 @@ public final class Utils {
 
     public static void main(String[] args) throws IOException, AWTException, InterruptedException {
         //Loading an existing PDF document
-        File file1 = new File("Ray Tracing in a Weekend.pdf");
-
-        System.out.println(getTextOfPdfFile("Ray Tracing in a Weekend.pdf"));
-
+        var res = getTextFileAnalysis("./", "java", NUMBER_OF_LINES);
+        res.forEach((k, v) -> System.out.println(k.substring(k.lastIndexOf('\\') + 1) + "  " + v.get(NUMBER_OF_LINES) + "  " + v.get(NUMBER_OF_COMMENT_LINES)));
         //Closing the documents
     }
 }
