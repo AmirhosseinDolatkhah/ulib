@@ -15,6 +15,11 @@
         <JAVADOC />
         <SOURCES>
           <root url="jar://$USER_HOME$/.ideaLibSources/progressbar-0.9.1-sources.jar!/" />
+          <root url="jar://$USER_HOME$/Desktop/jfugue-5.0.9-src.zip!/demo/java" />
+          <root url="jar://$USER_HOME$/Desktop/jfugue-5.0.9-src.zip!/examples/java" />
+          <root url="jar://$USER_HOME$/Desktop/jfugue-5.0.9-src.zip!/main/java" />
+          <root url="jar://$USER_HOME$/Desktop/jfugue-5.0.9-src.zip!/manualtest/java" />
+          <root url="jar://$USER_HOME$/Desktop/jfugue-5.0.9-src.zip!/test/java" />
         </SOURCES>
         <jarDirectory url="file://$MODULE_DIR$/lib" recursive="false" />
       </library>

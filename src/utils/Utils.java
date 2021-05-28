@@ -4,11 +4,13 @@ import com.sun.management.OperatingSystemMXBean;
 import jmath.datatypes.functions.ColorFunction;
 import jmath.datatypes.tuples.Point3D;
 import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.cos.COSDocument;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
-import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.jfugue.midi.MidiDictionary;
+import org.jfugue.pattern.Pattern;
+import org.jfugue.player.Player;
+import org.jfugue.theory.ChordProgression;
 import visualization.canvas.*;
 import visualization.canvas.Canvas;
 
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntUnaryOperator;
+import java.util.stream.Collectors;
 
 import static utils.Utils.TextFileInfo.*;
 
@@ -241,6 +244,7 @@ public final class Utils {
         return res;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public static <T> AtomicReference<T> checkTimePerform(
             Task<T> task,
             boolean inCurrentThread,
@@ -316,12 +320,9 @@ public final class Utils {
     }
 
     public static <T> void removeDuplicates(List<T> list) {
-        var newList = new ArrayList<T>();
-        for (var element : list)
-            if (!newList.contains(element))
-                newList.add(element);
+        var set = new HashSet<>(list);
         list.clear();
-        list.addAll(newList);
+        list.addAll(set);
     }
 
     public static void writeObjects(String path, Object... objects) {
@@ -758,11 +759,11 @@ public final class Utils {
                 }
                 if (trim.startsWith("//") && !multiLineComment)
                     numOfComments++;
-                if (trim.startsWith("/*") && !multiLineComment)
+                if (trim.startsWith("/*") && !multiLineComment && (!trim.contains("*/") || trim.endsWith("*/")))
                     multiLineComment = true;
                 if (multiLineComment)
                     numOfComments++;
-                if (trim.endsWith("*/"))
+                if (trim.contains("*/"))
                     multiLineComment = false;
             }
         } catch (IOException e) {
@@ -864,8 +865,45 @@ public final class Utils {
         Runtime.getRuntime().exec(sb.substring(0, sb.length() - 1) + " -o " + destination);
     }
 
-    ///////////
+    /////////// show text table
 
+    public static void showTable(List<String> cols, List<List<String>> rows) {
+        showTable(cols, rows, cols.stream().map(s -> s.length() + 8).toList());
+    }
+
+    public static void showTable(List<String> cols, List<List<String>> rows, List<Integer> width) {
+        var sb = new StringBuilder();
+        int colNumber = cols.size();
+        for (int i = 0; i < colNumber; i++)
+            sb.append('+').append("-".repeat(width.get(i)));
+        sb.append('+').append('\n');
+        int counter = 0;
+        for (var col : cols)
+            sb.append(String.format("| %-"+ (width.get(counter++ % colNumber) - 1) + "s", col));
+        sb.append('|').append('\n');
+        sb.append(sb.substring(0, sb.indexOf("\n") + 1));
+        for (var row : rows) {
+            for (var cell : row)
+                sb.append(String.format("| %-"+ (width.get(counter++ % colNumber) - 1) + "s", cell));
+            sb.append('|').append('\n');
+        }
+        sb.append(sb.substring(0, sb.indexOf("\n") + 1));
+        System.out.println(sb);
+    }
+
+    /////////////// Exploration of JFugue
+    public static void simpleNotePlay() {
+        System.out.println(MidiDictionary.INSTRUMENT_STRING_TO_BYTE);
+        Pattern pattern = new ChordProgression("I IV V")
+                .distribute("7%6")
+                .allChordsAs("$0 $0 $0 $0 $1 $1 $0 $0 $2 $1 $0 $0")
+                .eachChordAs("$0ia100 $1ia80 $2ia80 $3ia80 $4ia100 $3ia80 $2ia80 $1ia80")
+                .getPattern()
+                .setInstrument("rock_organ")
+                .setTempo(150);
+        new Player().play(pattern);
+    }
+    ///////////////
 
     private Utils() {}
 
@@ -879,10 +917,7 @@ public final class Utils {
         void act(T t);
     }
 
-    public static void main(String[] args) throws IOException, AWTException, InterruptedException {
-        //Loading an existing PDF document
-        var res = getTextFileAnalysis("./", "java", NUMBER_OF_LINES);
-        res.forEach((k, v) -> System.out.println(k.substring(k.lastIndexOf('\\') + 1) + "  " + v.get(NUMBER_OF_LINES) + "  " + v.get(NUMBER_OF_COMMENT_LINES)));
-        //Closing the documents
+    public static void main(String[] args) {
+        new Player().play("V1 I[Piano] C D E V2 I[Flute] D F A");
     }
 }
