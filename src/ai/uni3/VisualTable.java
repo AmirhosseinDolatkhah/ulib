@@ -2,6 +2,7 @@ package ai.uni3;
 
 import utils.supplier.StringSupplier;
 import visualization.canvas.CoordinatedScreen;
+import visualization.canvas.Graph3DCanvas;
 import visualization.shapes.shape2d.grid2d.GridPlain2D;
 
 import java.awt.*;
@@ -13,10 +14,12 @@ import java.util.Scanner;
 public class VisualTable extends GridPlain2D {
 
     private final int[][] cells;
+    private final BacktrackAlgorithm algorithm;
 
     public VisualTable(CoordinatedScreen cs, int[][] cells) {
         super(cs, cells.length, cells[0].length);
         this.cells = cells;
+        algorithm = new BacktrackAlgorithm(cells);
         gridColor = Color.WHITE;
         for (int i = 0; i < numOfRows; i++)
             for (int j = 0; j < numOfCols; j++) {
@@ -24,21 +27,19 @@ public class VisualTable extends GridPlain2D {
                 final var fj = j;
                 var t = getTile(i, j);
                 t.setTextFunction(new StringSupplier() {
-                    private static final Font font = new Font(Font.SANS_SERIF, Font.BOLD, 24);
-
                     @Override
                     public Color getColor() {
                         return Color.BLACK;
                     }
 
                     @Override
-                    public Font getFont() {
-                        return font;
+                    public CoordinatedScreen cs() {
+                        return cs;
                     }
 
                     @Override
                     public String getText() {
-                        return cells[fi][fj] == -1 ? "-" : String.valueOf(cells[fi][fj]);
+                        return cells[fi][fj] == -1 ? "_" : String.valueOf(cells[fi][fj]);
                     }
                 });
                 t.setColorFunc(() -> switch (cells[fi][fj]) {
@@ -48,6 +49,10 @@ public class VisualTable extends GridPlain2D {
                     default -> Color.RED;
                 });
             }
+    }
+
+    public BacktrackAlgorithm getAlgorithm() {
+        return algorithm;
     }
 
     public int[][] getCells() {

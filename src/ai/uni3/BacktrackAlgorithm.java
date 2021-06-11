@@ -1,31 +1,80 @@
 package ai.uni3;
 
+import utils.SemaphoreBase;
 import utils.annotation.Algorithm;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.awt.*;
+import java.util.*;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 @Algorithm(type = Algorithm.SEARCH)
-public class BacktrackAlgorithm {
+public class BacktrackAlgorithm implements SemaphoreBase<String> {
+    private final Map<String, Semaphore> semaphoreMap;
     private final int[][] cells;
     private final int rows;
     private final int cols;
+    private final Map<Point, List<Integer>> domainMap;
 
     public BacktrackAlgorithm(int[][] cells) {
         this.cells = cells;
+        domainMap = new HashMap<>();
         rows = cells.length;
         cols = cells[0].length;
+        semaphoreMap = new HashMap<>();
+        addSemaphore("solve");
     }
 
-    private boolean solve() {
+    public boolean solve(boolean mcv) {
+        Point empty;
+        while ((empty = emptyCell(mcv)) != null) {
+//            acquire("solve");
+            if (empty.x == -1)
+                return false;
+            var domain = domain(empty.x, empty.y);
+            if (empty.equals(new Point(0, 9)))
+                System.err.println(domain);
+            if (domain.isEmpty()) {
+                domainMap.put(empty, new ArrayList<>(List.of(0, 1)));
+                return false;
+            }
+            cells[empty.x][empty.y] = domain.get(0);
+            if (solve(mcv))
+                return true;
+            domainMap.get(empty).remove(Integer.valueOf(cells[empty.x][empty.y]));
+            cells[empty.x][empty.y] = -1;
+        }
+        return true;
+    }
 
-        return false;
+    public Map<Point, List<Integer>> getDomainMap() {
+        return domainMap;
+    }
+
+    private Point emptyCell(boolean mcv) {
+        int size = mcv ? 3 : -1;
+        Point res = null;
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
+                if (cells[i][j] == -1) {
+                    var tmp = domain(i, j).size();
+                    if (tmp == 0) {
+                        domainMap.put(new Point(i, j), new ArrayList<>(List.of(0, 1)));
+                        return new Point(-1, -1);
+                    }
+                    if (mcv && size > tmp || !mcv && size < tmp) {
+                        size = tmp;
+                        res = new Point(i, j);
+                    }
+                }
+        return res;
     }
 
     private List<Integer> domain(int i, int j) {
-        var res = new ArrayList<>(List.of(0, 1));
+        var p = new Point(i, j);
+        if (!domainMap.containsKey(p))
+            domainMap.put(p, new ArrayList<>(List.of(0, 1)));
+        var res = new ArrayList<>(domainMap.get(p));
         res.removeIf(e -> !isPossible(e, i, j));
         return Collections.unmodifiableList(res);
     }
@@ -81,7 +130,12 @@ public class BacktrackAlgorithm {
     }
 
     private static boolean isFilled(int[] row) {
-        return Arrays.stream(row).anyMatch(e -> e == -1);
+        return Arrays.stream(row).noneMatch(e -> e == -1);
+    }
+
+    @Override
+    public Map<String, Semaphore> getSemaphoreMap() {
+        return semaphoreMap;
     }
 }
 

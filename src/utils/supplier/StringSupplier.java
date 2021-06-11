@@ -1,12 +1,15 @@
 package utils.supplier;
 
 import jmath.datatypes.functions.NoArgFunction;
+import visualization.canvas.CoordinatedScreen;
 
 import java.awt.*;
 
 @FunctionalInterface
 public interface StringSupplier extends NoArgFunction<String> {
-    Font defaultFont = new Font("serif", Font.BOLD, 14);
+    int defaultFontSize = 18;
+    int defaultFontStyle = Font.BOLD;
+    String defaultFont = Font.SANS_SERIF;
     Color defaultColor = Color.GREEN;
 
     String getText();
@@ -16,10 +19,14 @@ public interface StringSupplier extends NoArgFunction<String> {
     }
 
     default Font getFont() {
-        return defaultFont;
+        return new Font(defaultFont, defaultFontStyle, (int) (defaultFontSize * (cs() == null ? 1 : cs().scaleX() / 100)));
     }
 
     default Point getPosOnScreen() {
+        return null;
+    }
+
+    default CoordinatedScreen cs() {
         return null;
     }
 

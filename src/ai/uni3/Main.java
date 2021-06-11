@@ -2,6 +2,6 @@ package ai.uni3;
 
 public class Main {
     public static void main(String[] args) {
-        Runner.run("tmp/puzzles/puzzle5.txt");
+        Runner.run("tmp/puzzles/puzzle1.txt");
     }
 }

@@ -25,6 +25,8 @@ import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntUnaryOperator;
@@ -37,6 +39,7 @@ public final class Utils {
 
     public static final String nirCMDPath;
     public static final Robot robot;
+    public static final ExecutorService unsafeExecutor;
 
     public static final int NANO = 1000000000;
     public static final int MILLIS = 1000000;
@@ -62,6 +65,7 @@ public final class Utils {
             e.printStackTrace();
         }
         robot = rbt;
+        unsafeExecutor = Executors.newFixedThreadPool(10);
     }
 
     ///////////////////
@@ -222,6 +226,14 @@ public final class Utils {
         multiThreadIntArraySetter(pixels, i -> func.applyAsInt(pixels[i]), numOfThreads);
     }
 
+    public static BufferedImage readImage(String path) throws IOException {
+        var img = ImageIO.read(new File(path));
+        var res = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        var g = res.createGraphics();
+        g.drawImage(img, 0, 0, null);
+        g.dispose();
+        return res;
+    }
 
     //////////////////////
 

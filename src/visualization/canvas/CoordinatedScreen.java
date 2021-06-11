@@ -43,10 +43,20 @@ public interface CoordinatedScreen {
         throw new RuntimeException("AHD:: Only Point2D and Point3D is Considered");
     }
 
-    static CoordinatedScreen of2D(Point2D center, double scaleX, double scaleY) {
-        var res = new Graph2DCanvas();
-        // TODO://
-        return res;
+    default double scaleX() {
+        return 1 / coordinateXLen(1);
+    }
+
+    default double scaleY() {
+        return 1 / coordinateYLen(1);
+    }
+
+    static CoordinatedScreen default2D() {
+        return new Graph2DCanvas();
+    }
+
+    static CoordinatedScreen default3D() {
+        return new Graph3DCanvas();
     }
 }
 
