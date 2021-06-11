@@ -49,5 +49,6 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="lwjgl-3.2" level="project" />
   </component>
 </module>

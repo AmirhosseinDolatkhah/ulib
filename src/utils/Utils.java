@@ -510,7 +510,7 @@ public final class Utils {
     }
 
     public static String doCMD(String command) throws IOException {
-        var proc = Runtime.getRuntime().exec(command);
+        var proc = Runtime.getRuntime().exec(command.trim());
         BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
         BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
         var sb = new StringBuilder("out>");
@@ -892,8 +892,7 @@ public final class Utils {
     }
 
     /////////////// Exploration of JFugue
-    public static void simpleNotePlay() {
-        System.out.println(MidiDictionary.INSTRUMENT_STRING_TO_BYTE);
+    private static void simpleNotePlay() {
         Pattern pattern = new ChordProgression("I IV V")
                 .distribute("7%6")
                 .allChordsAs("$0 $0 $0 $0 $1 $1 $0 $0 $2 $1 $0 $0")
@@ -903,6 +902,18 @@ public final class Utils {
                 .setTempo(150);
         new Player().play(pattern);
     }
+    
+    private static void jFugueTemp() {
+        var pattern = new ChordProgression("I IV V")
+                        .distribute("7%6")
+                        .allChordsAs("$0 $0 $0 $0 $1 $1 $0 $0 $2 $1 $0 $0")
+                        .eachChordAs("$0ia100 $1ia80 $2ia80 $3ia80 $4ia100 $3ia80 $2ia80 $1ia80")
+                        .getPattern()
+                        .setInstrument("rock_organ")
+                        .setTempo(150);
+        new Player().play(pattern);
+    }
+    
     ///////////////
 
     private Utils() {}
@@ -917,7 +928,6 @@ public final class Utils {
         void act(T t);
     }
 
-    public static void main(String[] args) {
-        new Player().play("V1 I[Piano] C D E V2 I[Flute] D F A");
+    public static void main(String[] args) throws IOException {
     }
 }

@@ -3,6 +3,7 @@ package utils;
 import javax.swing.*;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
+import java.util.function.BiConsumer;
 
 @FunctionalInterface
 public interface SemaphoreBase<K> {
@@ -55,5 +56,8 @@ public interface SemaphoreBase<K> {
     }
     default Timer getAcquireTimer(K key, int delayMillis) {
         return getAcquireTimer(key, 1, delayMillis);
+    }
+    default void forEach(BiConsumer<K, Semaphore> consumer) {
+        getSemaphoreMap().forEach(consumer);
     }
 }
