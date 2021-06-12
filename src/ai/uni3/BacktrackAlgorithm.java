@@ -28,7 +28,7 @@ public class BacktrackAlgorithm implements SemaphoreBase<String> {
     public boolean solve(boolean mcv) {
         Point empty;
         while ((empty = emptyCell(mcv)) != null) {
-//            acquire("solve");
+            //            acquire("solve");
             if (empty.x == -1)
                 return false;
             var domain = domain(empty.x, empty.y);
@@ -38,10 +38,12 @@ public class BacktrackAlgorithm implements SemaphoreBase<String> {
                 domainMap.put(empty, new ArrayList<>(List.of(0, 1)));
                 return false;
             }
-            cells[empty.x][empty.y] = domain.get(0);
-            if (solve(mcv))
-                return true;
-            domainMap.get(empty).remove(Integer.valueOf(cells[empty.x][empty.y]));
+            for (var e : domain) {
+                cells[empty.x][empty.y] = e;
+                if (solve(mcv))
+                    return true;
+                domainMap.get(empty).remove(e);
+            }
             cells[empty.x][empty.y] = -1;
         }
         return true;
@@ -138,4 +140,3 @@ public class BacktrackAlgorithm implements SemaphoreBase<String> {
         return semaphoreMap;
     }
 }
-

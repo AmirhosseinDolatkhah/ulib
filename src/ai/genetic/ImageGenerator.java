@@ -24,7 +24,7 @@ public class ImageGenerator {
 
     public ImageGenerator(BufferedImage baseImage, int populationSize) {
         this.baseImage = baseImage;
-        var base = Utils.getIntColorArray(baseImage);
+        var base = Utils.getIntColorArrayOfImage(baseImage);
         width = baseImage.getWidth();
         height = baseImage.getHeight();
         len = width * height;
@@ -54,13 +54,13 @@ public class ImageGenerator {
 
         public ImageGene(int[] buffer) {
             image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            this.buffer = Utils.getIntColorArray(image);
+            this.buffer = Utils.getIntColorArrayOfImage(image);
             System.arraycopy(buffer, 0, this.buffer, 0, width * height);
         }
 
         public ImageGene(BufferedImage image) {
             this.image = image;
-            buffer = Utils.getIntColorArray(image);
+            buffer = Utils.getIntColorArrayOfImage(image);
         }
 
         public ImageGene() {
@@ -101,10 +101,12 @@ public class ImageGenerator {
         }
 
         public void mutate() {
-            if (random() > 0.9)
-                return;
-            buffer[(int) (random() * len)] = (int) (Integer.MAX_VALUE * random());
-            mutate();
+//            if (random() > 0.9)
+//                return;
+            var seed = 0.17 * len;
+            for (int i = 0; i < seed ; i++)
+                buffer[(int) (random() * len)] = (int) (Integer.MAX_VALUE * random());
+//            mutate();
         }
 
         @Override
@@ -118,8 +120,8 @@ public class ImageGenerator {
     }
 
     public static void main(String[] args) throws IOException {
-        var ig = new ImageGenerator(Utils.readImage("tmp/M.JPG"), 50);
-        var count = 100000;
+        var ig = new ImageGenerator(Utils.readImage("tmp/me.JPG"), 10);
+        var count = 500;
         while (count-- > 0) {
             ig.nextGeneration();
             System.out.println(ig.fitness() / ig.len);

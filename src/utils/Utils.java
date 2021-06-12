@@ -2,19 +2,24 @@ package utils;
 
 import com.sun.management.OperatingSystemMXBean;
 import jmath.datatypes.functions.ColorFunction;
+import jmath.datatypes.functions.Function2D;
+import jmath.datatypes.functions.IntMapper2D;
+import jmath.datatypes.functions.Mapper2D;
+import jmath.datatypes.tuples.Point2D;
 import jmath.datatypes.tuples.Point3D;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
 import org.apache.pdfbox.text.PDFTextStripper;
-import org.jfugue.midi.MidiDictionary;
 import org.jfugue.pattern.Pattern;
 import org.jfugue.player.Player;
 import org.jfugue.theory.ChordProgression;
+import utils.predicate.IntBinaryPredicate;
 import visualization.canvas.*;
 import visualization.canvas.Canvas;
 
 import javax.imageio.ImageIO;
+import javax.sound.midi.Soundbank;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
@@ -28,9 +33,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.DoubleSupplier;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntUnaryOperator;
-import java.util.stream.Collectors;
 
 import static utils.Utils.TextFileInfo.*;
 
@@ -78,7 +83,7 @@ public final class Utils {
         return res;
     }
 
-    public static void saveJComponentImage(String path, Canvas canvas) {
+    public static void saveCanvasAsImage(String path, Canvas canvas) {
         try {
             ImageIO.write(getCanvasImage(canvas),
                     path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : "jpg",
@@ -99,7 +104,7 @@ public final class Utils {
         return Double.parseDouble(res.substring(0, res.indexOf('.') + precision + 1));
     }
 
-    public static int[] getIntColorArray(BufferedImage bi) {
+    public static int[] getIntColorArrayOfImage(BufferedImage bi) {
         return ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
     }
 
@@ -133,13 +138,13 @@ public final class Utils {
 
     public static BufferedImage createImage(int width, int height, IntBinaryOperator colorFunc, int numOfThreads) {
         var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        multiThreadIntArraySetter(getIntColorArray(res), i -> colorFunc.applyAsInt(i / width, i % width), numOfThreads);
+        multiThreadIntArraySetter(getIntColorArrayOfImage(res), i -> colorFunc.applyAsInt(i / width, i % width), numOfThreads);
         return res;
     }
 
     public static BufferedImage createImage(int width, int height, IntUnaryOperator colorFunc, int numOfThreads) {
         var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        multiThreadIntArraySetter(getIntColorArray(res), colorFunc, numOfThreads);
+        multiThreadIntArraySetter(getIntColorArrayOfImage(res), colorFunc, numOfThreads);
         return res;
     }
 
@@ -147,7 +152,7 @@ public final class Utils {
         var w = cc.getWidth();
         var h = cc.getHeight();
         var res = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        multiThreadIntArraySetter(getIntColorArray(res),
+        multiThreadIntArraySetter(getIntColorArrayOfImage(res),
                 i -> colorFunc.valueAt(cc.coordinateX(i / w), cc.coordinateY(i % w)).getRGB(), numOfThreads);
         return res;
     }
@@ -186,7 +191,7 @@ public final class Utils {
 
     public static BufferedImage createImageSingleThread(int width, int height, IntUnaryOperator colorFunc) {
         var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        var arr = getIntColorArray(res);
+        var arr = getIntColorArrayOfImage(res);
         for (int i = 0; i < arr.length; i++)
             arr[i] = colorFunc.applyAsInt(i);
         return res;
@@ -212,7 +217,7 @@ public final class Utils {
     }
 
     public static void affectOnImageSingleThread(BufferedImage image, IntUnaryOperator func) {
-        var pixels = getIntColorArray(image);
+        var pixels = getIntColorArrayOfImage(image);
         for (int i = 0; i < pixels.length; i++)
             pixels[i] = func.applyAsInt(pixels[i]);
     }
@@ -222,7 +227,7 @@ public final class Utils {
             affectOnImageSingleThread(image, func);
             return;
         }
-        var pixels = getIntColorArray(image);
+        var pixels = getIntColorArrayOfImage(image);
         multiThreadIntArraySetter(pixels, i -> func.applyAsInt(pixels[i]), numOfThreads);
     }
 
@@ -234,6 +239,77 @@ public final class Utils {
         g.dispose();
         return res;
     }
+
+    public static BufferedImage glitchedCloneOfImage(BufferedImage source, IntBinaryOperator colorFunction, DoubleSupplier randFactorFunction) {
+        final var w = source.getWidth();
+        var res = new BufferedImage(w, source.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        final var s = getIntColorArrayOfImage(source);
+        final var c = getIntColorArrayOfImage(res);
+        for (int i = 0; i < s.length; i++)
+            if (Math.random() < randFactorFunction.getAsDouble()) {
+                c[i] = s[i];
+            } else {
+                c[i] = colorFunction.applyAsInt(i / w, i % w);
+            }
+        return res;
+    }
+
+    public static BufferedImage cloneAffectivelyImage(BufferedImage source, IntUnaryOperator effector,
+            IntBinaryPredicate changePredicate) {
+        final var w = source.getWidth();
+        var res = new BufferedImage(w, source.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        var c = getIntColorArrayOfImage(res);
+        var s = getIntColorArrayOfImage(source);
+        for (int i = 0; i < c.length; i++)
+            c[i] = changePredicate.test(i / w, i % w) ? effector.applyAsInt(c[i]) : s[i];
+        return res;
+    }
+
+    @SuppressWarnings("SuspiciousNameCombination")
+    public static BufferedImage cloneSpatialAffectedImage(BufferedImage source, IntMapper2D spatialMapper,
+            IntBinaryPredicate mappingPredicate, IntBinaryOperator colorIfNotInBound,
+            IntBinaryOperator colorIfNotMapping) {
+        final var w = source.getWidth();
+        final var h = source.getHeight();
+        var res = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        var c = getIntColorArrayOfImage(res);
+        var s = getIntColorArrayOfImage(source);
+        for (int i = 0; i < s.length; i++) {
+            final var x = i / w;
+            final var y = i % w;
+            var m = spatialMapper.map(x, y);
+            if (m.x >= 0 && m.y >= 0 && m.x < h && m.y < w) {
+                c[i] = mappingPredicate.check(m.x, m.y) ? s[m.x * w + m.y] : colorIfNotMapping.applyAsInt(x, y);
+            } else if (colorIfNotInBound != null) {
+                c[i] = colorIfNotInBound.applyAsInt(x, y);
+            } else {
+                while (m.x < 0) m.x += h;
+                while (m.x >= h) m.x -= h;
+                while (m.y < 0) m.y += w;
+                while (m.y >= w) m.x -= w;
+                c[i] = s[m.x * w + m.y];
+            }
+        }
+        return res;
+    }
+
+    public static BufferedImage cloneSpatialAffectedImage(BufferedImage source, Mapper2D mapper) {
+        final var w = source.getWidth();
+        final var h = source.getHeight();
+        return cloneSpatialAffectedImage(source,
+                (i, j) -> {
+                    var m = mapper.map(i / (double) h, j / (double) w);
+                    return new Point(
+                            (int) (h * Math.abs(m.x)),
+                            (int) (w * Math.abs(m.y))
+                    );
+                },
+                (i, j) -> true,
+                (i, j) -> 0,
+                (i, j) -> 0
+        );
+    }
+
 
     //////////////////////
 
@@ -431,13 +507,16 @@ public final class Utils {
         }
     }
 
-    public static void saveRenderedImage(RenderedImage img, String absPath) throws IOException {
-        var dir = new File(absPath); //AHD::TODO need attention
-        if (!(dir.exists() || dir.mkdirs())) {
-            System.err.println("Error in Creating non existed directory: " + absPath);
-            return;
+    public static void saveRenderedImage(RenderedImage img, String absPath, String formatName) throws IOException {
+        var dirSpecified = absPath.contains("/");
+        if (dirSpecified) {
+            var dir = new File(absPath.substring(0, absPath.lastIndexOf('/')));
+            if (!(dir.exists() || dir.mkdirs())) {
+                System.err.println("Error in Creating non existed directory: " + absPath);
+                return;
+            }
         }
-        ImageIO.write(img, "jpg", new File(absPath));
+        ImageIO.write(img, formatName, new File(absPath));
     }
 
     public static Image getImage(String absPath) {
@@ -941,5 +1020,28 @@ public final class Utils {
     }
 
     public static void main(String[] args) throws IOException {
+//        saveRenderedImage(glitchedCloneOfImage(readImage("tmp/me.jpg"), (i, j) -> (int) (Math.random() * Integer.MAX_VALUE),
+//                () -> Math.sin(tmp += Math.random())), "this.png", "png");
+
+//        saveRenderedImage(cloneSpatialAffectedImage(readImage("tmp/me.jpg"),
+//                (i, j) -> new Point(
+//                        (int) (480 * Math.abs(Math.tan(i / 480.0 * Math.PI))),
+//                        (int) (640 * Math.abs(Math.cos(j / 640.0 * Math.PI - Math.PI / 2)))
+//                ),
+//                (i, j) -> true,
+//                (i, j) -> Integer.MAX_VALUE,
+//                (i, j) -> Integer.MAX_VALUE
+//        ), "tmp/spatial-mapper/this" + System.currentTimeMillis() + ".png", "png");
+
+//        saveRenderedImage(cloneSpatialAffectedImage(readImage("tmp/me.jpg"),
+//                (x, y) -> new Point2D(
+//                        Math.sin(x),
+//                        Math.cos(y)
+//                )),
+//                "tmp/spatial-mapper/this" + System.currentTimeMillis() + ".png", "png");
+
+
+        //        saveRenderedImage(cloneAffectivelyImage(readImage("tmp/me.jpg"), color -> color,
+//                (i, j) -> i < 1000 * Math.sin(i * 600 + j)), "this.png", "png");
     }
 }

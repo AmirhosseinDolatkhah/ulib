@@ -116,7 +116,7 @@ public class Canvas extends JPanel implements Runnable {
         setBgImg.addActionListener(e -> setBgImage(JOptionPane.showInputDialog(Canvas.this, "Enter path of image: (If any exception occurred nothing will change)")));
         tooltip.addActionListener(e -> setToolTipText(JOptionPane.showInputDialog(Canvas.this, "Enter Tooltip Text of Canvas: (If any exception occurred nothing will change)", getToolTipText())));
         setInfoFontSize.addActionListener(e -> setInfoFont(new Font("serif", Font.BOLD, Integer.parseInt(JOptionPane.showInputDialog(Canvas.this, "Enter size of info font: (If any exception occurred nothing will change)", infoFont.getSize())))));
-        capture.addActionListener(e -> Utils.saveJComponentImage(System.nanoTime() + "", Canvas.this));
+        capture.addActionListener(e -> Utils.saveCanvasAsImage(System.nanoTime() + "", Canvas.this));
         resetRenderManager.addActionListener(e -> {
             camera.clear();
             removeSettingPanel();
