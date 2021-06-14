@@ -1023,7 +1023,7 @@ public final class Utils {
 //        saveRenderedImage(glitchedCloneOfImage(readImage("tmp/me.jpg"), (i, j) -> (int) (Math.random() * Integer.MAX_VALUE),
 //                () -> Math.sin(tmp += Math.random())), "this.png", "png");
 
-//        saveRenderedImage(cloneSpatialAffectedImage(readImage("tmp/me.jpg"),
+//        saveRenderedImage(cloneSpatialAffectedImage(readImage("tmp/img_1.png"),
 //                (i, j) -> new Point(
 //                        (int) (480 * Math.abs(Math.tan(i / 480.0 * Math.PI))),
 //                        (int) (640 * Math.abs(Math.cos(j / 640.0 * Math.PI - Math.PI / 2)))
@@ -1033,10 +1033,10 @@ public final class Utils {
 //                (i, j) -> Integer.MAX_VALUE
 //        ), "tmp/spatial-mapper/this" + System.currentTimeMillis() + ".png", "png");
 
-//        saveRenderedImage(cloneSpatialAffectedImage(readImage("tmp/me.jpg"),
+//        saveRenderedImage(cloneSpatialAffectedImage(readImage("tmp/img_1.png"),
 //                (x, y) -> new Point2D(
-//                        Math.sin(x),
-//                        Math.cos(y)
+//                        Math.cos(x) * Math.sin(y) * 5,
+//                        Math.sin(y) * 5
 //                )),
 //                "tmp/spatial-mapper/this" + System.currentTimeMillis() + ".png", "png");
 

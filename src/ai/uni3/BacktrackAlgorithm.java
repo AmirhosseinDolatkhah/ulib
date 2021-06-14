@@ -25,9 +25,9 @@ public class BacktrackAlgorithm implements SemaphoreBase<String> {
         addSemaphore("solve");
     }
 
-    public boolean solve(boolean mcv) {
+    public boolean solve(boolean mrv) {
         Point empty;
-        while ((empty = emptyCell(mcv)) != null) {
+        while ((empty = emptyCell(mrv)) != null) {
             //            acquire("solve");
             if (empty.x == -1)
                 return false;
@@ -40,7 +40,7 @@ public class BacktrackAlgorithm implements SemaphoreBase<String> {
             }
             for (var e : domain) {
                 cells[empty.x][empty.y] = e;
-                if (solve(mcv))
+                if (solve(mrv))
                     return true;
                 domainMap.get(empty).remove(e);
             }
@@ -53,8 +53,8 @@ public class BacktrackAlgorithm implements SemaphoreBase<String> {
         return domainMap;
     }
 
-    private Point emptyCell(boolean mcv) {
-        int size = mcv ? 3 : -1;
+    private Point emptyCell(boolean mrv) {
+        int size = mrv ? 3 : -1;
         Point res = null;
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++)
@@ -64,7 +64,7 @@ public class BacktrackAlgorithm implements SemaphoreBase<String> {
                         domainMap.put(new Point(i, j), new ArrayList<>(List.of(0, 1)));
                         return new Point(-1, -1);
                     }
-                    if (mcv && size > tmp || !mcv && size < tmp) {
+                    if (mrv && size > tmp || !mrv && size < tmp) {
                         size = tmp;
                         res = new Point(i, j);
                     }
