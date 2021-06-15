@@ -85,7 +85,6 @@ public class EnCanvas extends Canvas implements Runnable {
 
         g.dispose();
         bs.show();
-
     }
 
 }

@@ -1,19 +1,21 @@
 package visualization.canvas;
 
-import utils.Utils;
 import visualization.shapes.shape3d.Area;
 import visualization.shapes.shape3d.FlatSurface;
 import visualization.shapes.shape3d.Shape3D;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("ALL")
 public class RenderManager extends ArrayList<Render> implements Render {
+    private static final RenderManager unsafe = new RenderManager();
+
     private static final long MAX_SINGLE_THREADED_TICK_TIME = 80;
     private int renderCounter;
     private int tickCounter;
@@ -66,7 +68,7 @@ public class RenderManager extends ArrayList<Render> implements Render {
 
     public <T> List<T> get(Class<T> clazz) {
         //noinspection unchecked
-        return stream().filter(clazz::isInstance).map(e -> (T) e).collect(Collectors.toList());
+        return stream().filter(clazz::isInstance).map(e -> (T) e).toList();
     }
 
     @Override
@@ -83,13 +85,17 @@ public class RenderManager extends ArrayList<Render> implements Render {
                 RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC
         ));
 //        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        renderAction(g2d);
+        lastRenderTime = System.currentTimeMillis() - t;
+        renderCounter++;
+    }
+
+    protected void renderAction(Graphics2D g2d) {
         var list = new ArrayList<Shape3D>();
         stream().filter(Area.class::isInstance).map(e -> ((Area) e).getComponents()).forEach(list::addAll);
         list.sort(Comparator.comparingDouble(f -> f.getCenter().z));
         list.forEach(r -> r.renderIfInView(g2d));
         stream().filter(e -> !(e instanceof Area)).forEach(render -> render.renderIfInView(g2d));
-        lastRenderTime = System.currentTimeMillis() - t;
-        renderCounter++;
     }
 
     public int getRenderCounter() {
@@ -119,6 +125,25 @@ public class RenderManager extends ArrayList<Render> implements Render {
 
     public long renderRoundTime() {
         return lastRenderTime;
+    }
+
+    public BufferedImage getFrame(int width, int height) {
+        return getFrame(width, height, false);
+    }
+
+    public BufferedImage getFrame(int width, int height, boolean antiAlias) {
+        var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        var g2d = res.createGraphics();
+        if (antiAlias)
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        render(g2d);
+        g2d.dispose();
+        return res;
+    }
+
+    public static RenderManager resetAndGetUnsafeRenderManager() {
+        unsafe.clear();
+        return unsafe;
     }
 
     @Override

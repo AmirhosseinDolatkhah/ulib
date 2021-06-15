@@ -61,13 +61,29 @@ public class TernaryFunction implements Function4D {
         return Arc2D.NaN;
     }
 
-    public Arc3D asArc3d(double yFixValue, double zFixValue) {
+    public Arc3D asArc3D(double yFixValue, double zFixValue) {
         if (allDimensions.length > 2)
             return t -> new Point3D(
                     allDimensions[0].valueAt(t, yFixValue, zFixValue),
                     allDimensions[1].valueAt(t, yFixValue, zFixValue),
                     allDimensions[2].valueAt(t, yFixValue, zFixValue));
         return Arc3D.NaN;
+    }
+
+    public Function4D fx() {
+        return kernel;
+    }
+
+    public Function4D fy() {
+        return allDimensions.length < 2 ? Function4D.NaN : allDimensions[1];
+    }
+
+    public Function4D fz() {
+        return allDimensions.length < 3 ? Function4D.NaN : allDimensions[2];
+    }
+
+    public Function4D fw() {
+        return allDimensions.length < 4 ? Function4D.NaN : allDimensions[3];
     }
 
     public Surface asSurface(double zFixValue) {

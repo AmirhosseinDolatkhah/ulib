@@ -76,7 +76,6 @@ public class Canvas extends JPanel implements Runnable {
     }
 
     protected JPanel getSettingPanel() {
-        var settingPanel = new JPanel(new GridLayout(0, 2));
         var fps = new JButton("Set FPS");
         var start = new JButton("Start");
         var stop = new JButton("Stop");
@@ -91,21 +90,22 @@ public class Canvas extends JPanel implements Runnable {
         var resetRenderManager = new JButton("ResetRenderManager");
         var tickAndShow = new JButton("Tick and show");
 
-        settingPanel.add(fps);
-        settingPanel.add(new JLabel(getName(), JLabel.CENTER));
-        settingPanel.add(start);
-        settingPanel.add(stop);
-        settingPanel.add(showInfo);
-        settingPanel.add(showBgImg);
-        settingPanel.add(changeBgColor);
-        settingPanel.add(setInfoColor);
-        settingPanel.add(setInfoFontSize);
-        settingPanel.add(setBgImg);
-        settingPanel.add(capture);
-        settingPanel.add(tooltip);
-        settingPanel.add(resetRenderManager);
-        settingPanel.add(tickAndShow);
-
+        var settingPanel = new JPanel(new GridLayout(0, 2)) {{
+            add(fps);
+            add(new JLabel(getName(), JLabel.CENTER));
+            add(start);
+            add(stop);
+            add(showInfo);
+            add(showBgImg);
+            add(changeBgColor);
+            add(setInfoColor);
+            add(setInfoFontSize);
+            add(setBgImg);
+            add(capture);
+            add(tooltip);
+            add(resetRenderManager);
+            add(tickAndShow);
+        }};
         start.addActionListener(e -> start());
         stop.addActionListener(e -> stop());
         showInfo.addActionListener(e -> setShowInfo(showInfo.isSelected()));

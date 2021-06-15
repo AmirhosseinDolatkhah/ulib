@@ -4,10 +4,14 @@ import jmath.datatypes.tuples.Point3D;
 
 @SuppressWarnings("unused")
 public interface Function4D extends Function<Double, Point3D> {
+    Function4D NaN = (x, y, z) -> Double.NaN;
+
     double valueAt(double x, double y, double z);
 
     @Override
-    default Double valueAt(Point3D point) {return valueAt(point.x, point.y, point.z);}
+    default Double valueAt(Point3D point) {
+        return valueAt(point.x, point.y, point.z);
+    }
 
     @Override
     default Double atOrigin() {
@@ -23,7 +27,7 @@ public interface Function4D extends Function<Double, Point3D> {
     }
 
     default UnaryFunction fy(double x, double z) {
-        return  new UnaryFunction(y -> valueAt(x, y, z));
+        return new UnaryFunction(y -> valueAt(x, y, z));
     }
 
     default UnaryFunction fz(double x, double y) {
@@ -47,6 +51,6 @@ public interface Function4D extends Function<Double, Point3D> {
     }
 
     default TernaryFunction f() {
-        return (TernaryFunction) this;
+        return new TernaryFunction(this);
     }
 }

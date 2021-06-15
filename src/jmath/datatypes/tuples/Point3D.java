@@ -259,6 +259,10 @@ public class Point3D extends SortableTuple<Double> implements Comparable<Point3D
         return new Point2D(tmp.x, tmp.y);
     }
 
+    public Point3D immutable() {
+        return immutable(this);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -361,6 +365,150 @@ public class Point3D extends SortableTuple<Double> implements Comparable<Point3D
 
     public static Point3D getNormalVecFrom3Point(Point3D p1, Point3D p2, Point3D p3) {
         return sub(p1, p2).crossProduct(sub(p1, p3)).normalize();
+    }
+
+    public static Point3D immutable(double x, double y, double z) {
+        return new Point3D(x, y, z) {
+            @Override
+            public boolean testAndSet(int numOfCoordinate, double oldValue, double newValue) {
+                return getCopy().testAndSet(numOfCoordinate, oldValue, newValue);
+            }
+
+            @Override
+            public void setCoordinate(int numOfCoordinate, double newValue) {
+                getCopy().setCoordinate(numOfCoordinate, newValue);
+            }
+
+            @Override
+            public Point3D set(@NotNull Point3D p) {
+                return getCopy().set(p);
+            }
+
+            @Override
+            public Point3D set(double newX, double newY, double newZ) {
+                return getCopy().set(newX, newY, newZ);
+            }
+
+            @Override
+            public Point3D set(Point2D p, double newZ) {
+                return getCopy().set(p, newZ);
+            }
+
+            @Override
+            public Point3D addVector(Point3D vector) {
+                return getCopy().addVector(vector);
+            }
+
+            @Override
+            public Point3D addVector(double x, double y, double z) {
+                return getCopy().addVector(x, y, z);
+            }
+
+            @Override
+            public Point3D affectOnX(Function2D f) {
+                return getCopy().affectOnX(f);
+            }
+
+            @Override
+            public Point3D affectOnY(Function2D f) {
+                return getCopy().affectOnY(f);
+            }
+
+            @Override
+            public Point3D affectOnZ(Function2D f) {
+                return getCopy().affectOnZ(f);
+            }
+
+            @Override
+            public Point3D affectOnXYZ(Function2D f) {
+                return getCopy().affectOnXYZ(f);
+            }
+
+            @Override
+            public Point3D rotate(double xAngle, double yAngle, double zAngle) {
+                return getCopy().rotate(xAngle, yAngle, zAngle);
+            }
+
+            @Override
+            public Point3D rotate(Point3D center, double xAngle, double yAngle, double zAngle) {
+                return getCopy().rotate(center, xAngle, yAngle, zAngle);
+            }
+
+            @Override
+            public Point3D affectMapper(Mapper3D... mappers) {
+                return getCopy().affectMapper(mappers);
+            }
+
+            @Override
+            public Point3D crossProduct(Point3D p) {
+                return getCopy().crossProduct(p);
+            }
+
+            @Override
+            public Point3D normalize() {
+                return getCopy().normalize();
+            }
+
+            @Override
+            public Point3D affectMatrix(double[][] mat) {
+                return getCopy().affectMatrix(mat);
+            }
+
+            @Override
+            public Point3D add(Point3D... points) {
+                return getCopy().add(points);
+            }
+
+            @Override
+            public Point3D sub(Point3D p) {
+                return getCopy().sub(p);
+            }
+
+            @Override
+            public Point3D sub(Point3D... points) {
+                return getCopy().sub(points);
+            }
+
+            @Override
+            public void addElement(int index, Double e) {
+                getCopy().addElement(index, e);
+            }
+
+            @Override
+            public void removeAll() {
+                getCopy().removeAll();
+            }
+
+            @Override
+            public void remove(int... indexes) {
+                getCopy().remove(indexes);
+            }
+
+            @Override
+            public SortableTuple<Double> subTuple(int indexStart, int indexEnd, int step) {
+                return getCopy().subTuple(indexStart, indexEnd, step);
+            }
+        };
+    }
+
+    public static Point3D immutable(Point3D point) {
+        return immutable(point.x, point.y, point.z);
+    }
+
+    public static Point3D rotateImmutably(Point3D point, Point3D angles, Point3D center) {
+        return new Point3D(point).rotate(center, angles.x, angles.y, angles.z);
+    }
+
+    public static Point3D rotateImmutably(Point3D point, Point3D angles) {
+        return new Point3D(point).rotate(angles.x, angles.y, angles.z);
+    }
+
+    public static Point3D of(double x, double y, double z) {
+        return immutable(x, y, z);
+    }
+
+    public static Point3D of(Point3D point) {
+        return immutable(point);
     }
 
     @Deprecated

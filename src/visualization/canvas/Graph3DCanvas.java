@@ -28,10 +28,10 @@ public class Graph3DCanvas extends Graph2DCanvas {
     }
 
     private void handleRotationByMouse() {
-        final int[] button = new int[1];
-        var mousePoint = new Point();
-        final boolean[] cameraFocused = {false};
-        final double mouseSensitivity = 350;
+        final var button = new int[1];
+        final var mousePoint = new Point();
+        final var cameraFocused = new boolean[] {false};
+        final var mouseSensitivity = 350.0;
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -44,6 +44,7 @@ public class Graph3DCanvas extends Graph2DCanvas {
         });
 
         addMouseMotionListener(new MouseAdapter() {
+            @SuppressWarnings("SuspiciousNameCombination")
             @Override
             public void mouseDragged(MouseEvent e) {
                 if (cameraFocused[0])
@@ -52,27 +53,32 @@ public class Graph3DCanvas extends Graph2DCanvas {
                 var yDif = (mousePoint.y - e.getY()) / mouseSensitivity;
                 if (e.isControlDown() || e.isAltDown()) {
                     if (button[0] == MouseEvent.BUTTON1) {
-                        if (e.isControlDown())
-                            getRenderManager().getShape3d().forEach(shape -> shape.rotate(-yDif, xDif, 0));
+                        if (e.isControlDown()) {
+                            camera.getShape3d().forEach(shape -> shape.rotate(-yDif, xDif, 0));
+                            camera.rotate(-yDif, xDif, 0);
+                        }
                         if (e.isAltDown()) {
                             getRenderManager().getShape3d().forEach(shape -> shape.rotate(new Point3D(), -yDif, xDif, 0));
                             rotationAroundCenter.addVector(-yDif, xDif, 0);
                         }
                     } else if (button[0] == MouseEvent.BUTTON3) {
-                        if (e.isControlDown())
+                        if (e.isControlDown()) {
                             getRenderManager().getShape3d().forEach(shape -> shape.rotate(0, 0, yDif + xDif));
+                            camera.rotate(0, 0, yDif + xDif);
+                        }
                         if (e.isAltDown()) {
-                            getRenderManager().getShape3d().forEach(shape -> shape.rotate(new Point3D(), 0, 0, yDif + xDif));
+                            camera.getShape3d().forEach(shape -> shape.rotate(new Point3D(), 0, 0, yDif + xDif));
                             rotationAroundCenter.addVector(0, 0, xDif + yDif);
                         }
                     }
                 }
-                mousePoint.setLocation(e.getX(), e.getY());
+                mousePoint.setLocation(e.getPoint());
                 repaint();
             }
         });
 
         addMouseMotionListener(new MouseAdapter() {
+            @SuppressWarnings("SuspiciousNameCombination")
             @Override
             public void mouseMoved(MouseEvent e) {
                 if (!cameraFocused[0])
@@ -84,6 +90,7 @@ public class Graph3DCanvas extends Graph2DCanvas {
                                 -yDif, xDif, yDif + xDif
                         )
                 );
+                camera.rotate(-yDif, xDif, yDif + xDif);
                 repaint();
             }
         });
@@ -104,7 +111,7 @@ public class Graph3DCanvas extends Graph2DCanvas {
     }
     
     public void addArc3DToDraw(String arc3d) {
-        var arc = Function4DParser.parser(arc3d).f().asArc3d(0, 0);
+        var arc = Function4DParser.parser(arc3d).f().asArc3D(0, 0);
         var curve = new Curve3D(this, coordinateX(0) * 0.7, coordinateX(getWidth()) * 0.7, 0.1, arc);
         stringBaseMap.put(arc3d, curve);
         addRender(curve);
@@ -112,7 +119,7 @@ public class Graph3DCanvas extends Graph2DCanvas {
 
     public static void simplePlotter(List<Point3D> points, CoordinatedScreen cs, Graphics2D g2d) {
         var vps = new ArrayList<>(points);
-        vps.removeIf(e -> !Double.isFinite(e.x) || !Double.isFinite(e.y));
+        vps.removeIf(e -> !Double.isFinite(e.x) || !Double.isFinite(e.y) || !Double.isFinite(e.z));
         var xa = new int[vps.size()];
         var ya = new int[vps.size()];
         int counter = 0;
@@ -124,7 +131,7 @@ public class Graph3DCanvas extends Graph2DCanvas {
     }
 
     public Point3D getRotationAroundCenter() {
-        return rotationAroundCenter;
+        return rotationAroundCenter.immutable();
     }
 
     @Override
@@ -147,13 +154,13 @@ public class Graph3DCanvas extends Graph2DCanvas {
         addFunc.addActionListener(e -> {
             addFunction3DToDraw(JOptionPane.showInputDialog(""));
             sp.remove(1);
-            sp.add(getFunction3DList());
+            var list = getFunction3DList();
+            list.setPreferredSize(new Dimension(250, 0));
+            sp.add(list);
             sp.revalidate();
             sp.repaint();
         });
-        addArc.addActionListener(e -> {
-            addArc3DToDraw(JOptionPane.showInputDialog(""));
-        });
+        addArc.addActionListener(e -> addArc3DToDraw(JOptionPane.showInputDialog("")));
 
         sp.setBorder(BorderFactory.createTitledBorder("Graph3D Canvas"));
         settingPanel.add(sp);
@@ -213,7 +220,7 @@ public class Graph3DCanvas extends Graph2DCanvas {
                 listPanel.revalidate();
             }
         });
-        listPanel.setPreferredSize(new Dimension(250, 350));
+        listPanel.setPreferredSize(new Dimension(250, 0));
         return listPanel;
     }
 

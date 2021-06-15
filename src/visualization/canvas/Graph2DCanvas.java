@@ -59,25 +59,25 @@ public class Graph2DCanvas extends CoordinatedCanvas {
     public static final HashMap<Integer, Object> DEFAULT_PROPERTIES;
 
     static {
-        DEFAULT_PROPERTIES = new HashMap<>();
-
-        DEFAULT_PROPERTIES.put(COLOR, Color.BLUE);
-        DEFAULT_PROPERTIES.put(IS_VISIBLE, true);
-        DEFAULT_PROPERTIES.put(COLOR_FUNC, (Function2D) x -> Math.random());
-        DEFAULT_PROPERTIES.put(RADIUS_FUNC, (Function2D) x -> x / 2);
-        DEFAULT_PROPERTIES.put(ACCURACY_RATE, 2D);
-        DEFAULT_PROPERTIES.put(FILLED_OVAL, false);
-        DEFAULT_PROPERTIES.put(SHOW_ROOTS, false);
-        DEFAULT_PROPERTIES.put(SHOW_STATIONARY_POINTS, false);
-        DEFAULT_PROPERTIES.put(THICKNESS, 1.5f);
-        DEFAULT_PROPERTIES.put(NUM_OF_THREADS, 10);
-        DEFAULT_PROPERTIES.put(LOW_BOUND, Double.NEGATIVE_INFINITY);
-        DEFAULT_PROPERTIES.put(UP_BOUND, Double.POSITIVE_INFINITY);
-        DEFAULT_PROPERTIES.put(TYPICAL_PLOT, true);
-        DEFAULT_PROPERTIES.put(DOT_PLOT, false);
-        DEFAULT_PROPERTIES.put(ADVANCED_PLOT, false);
-        DEFAULT_PROPERTIES.put(POINT_RADIUS, 0.1);
-        DEFAULT_PROPERTIES.put(BEFORE_PARSE, "Un Available");
+        DEFAULT_PROPERTIES = new HashMap<>() {{
+            put(COLOR, Color.BLUE);
+            put(IS_VISIBLE, true);
+            put(COLOR_FUNC, (Function2D) x -> Math.random());
+            put(RADIUS_FUNC, (Function2D) x -> x / 2);
+            put(ACCURACY_RATE, 2D);
+            put(FILLED_OVAL, false);
+            put(SHOW_ROOTS, false);
+            put(SHOW_STATIONARY_POINTS, false);
+            put(THICKNESS, 1.5f);
+            put(NUM_OF_THREADS, 10);
+            put(LOW_BOUND, Double.NEGATIVE_INFINITY);
+            put(UP_BOUND, Double.POSITIVE_INFINITY);
+            put(TYPICAL_PLOT, true);
+            put(DOT_PLOT, false);
+            put(ADVANCED_PLOT, false);
+            put(POINT_RADIUS, 0.1);
+            put(BEFORE_PARSE, "Un Available");
+        }};
     }
 
     // collections to display
@@ -201,6 +201,7 @@ public class Graph2DCanvas extends CoordinatedCanvas {
 
     public void addFunctionToDraw(Function3D f, double l, double u, double delta, Function2D color) {
         for (double y = l; y < u; y += delta)
+            //noinspection SuspiciousNameCombination
             addFunctionToDraw(f.f2D(y), new Color((int) (color.valueAt(y) * Integer.MAX_VALUE)));
         addFunctionToDraw(f.f2D(u), new Color((int) (color.valueAt(u) * Integer.MAX_VALUE)));
         repaint();
@@ -415,6 +416,7 @@ public class Graph2DCanvas extends CoordinatedCanvas {
                 continue;
 
             g2d.setStroke(new BasicStroke((float) p.get(THICKNESS), BasicStroke.CAP_SQUARE, BasicStroke.JOIN_ROUND));
+            //noinspection unchecked
             var sample = (List<Point2D>) p.get(ALL_POINTS);
             sample = Sampling.multiThreadSampling(f, Math.max(coordinateX(0),
                     (double) p.get(LOW_BOUND)), Math.min(coordinateX(getWidth()), (double) p.get(UP_BOUND)),
@@ -458,9 +460,11 @@ public class Graph2DCanvas extends CoordinatedCanvas {
             var r = (int) Math.max(Math.abs(radius.valueAt(p.x)), 1);
             g2d.setColor(new Color((int) (Integer.MAX_VALUE * color.valueAt(p.x))));
             if (fillOval) {
-                g2d.fillOval(screenX.valueAt(p.x) - r, screenY.valueAt(p.y) - r, 2*r, 2*r);
+                //noinspection SuspiciousNameCombination
+                g2d.fillOval(screenX.valueAt(p.x) - r, screenY.valueAt(p.y) - r, 2 * r, 2 * r);
             } else {
-                g2d.drawOval(screenX.valueAt(p.x) - r, screenY.valueAt(p.y) - r, 2*r, 2*r);
+                //noinspection SuspiciousNameCombination
+                g2d.drawOval(screenX.valueAt(p.x) - r, screenY.valueAt(p.y) - r, 2 * r, 2 * r);
             }
         }
     }
@@ -475,7 +479,7 @@ public class Graph2DCanvas extends CoordinatedCanvas {
         /////////
         var addFunc = new JButton("Add function2D");
 
-        var wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        var wrapper = new JPanel(new GridLayout());
         wrapper.add(addFunc);
         sp.add(wrapper);
         sp.add(getFunction2dList());
@@ -483,7 +487,9 @@ public class Graph2DCanvas extends CoordinatedCanvas {
         addFunc.addActionListener(e -> {
             addFunctionToDraw(JOptionPane.showInputDialog(Graph2DCanvas.this, "Please Enter The Function2D: ", "Function2D", JOptionPane.INFORMATION_MESSAGE));
             sp.remove(1);
-            sp.add(getFunction2dList());
+            var list = getFunction2dList();
+            list.setPreferredSize(new Dimension(250, 350));
+            sp.add(list);
             sp.revalidate();
             sp.repaint();
         });
@@ -517,12 +523,10 @@ public class Graph2DCanvas extends CoordinatedCanvas {
             public void mouseReleased(MouseEvent e) {
                 if (listPanel.getComponentCount() == 2)
                     listPanel.remove(1);
+                //noinspection SuspiciousMethodCalls
                 var pp = getFunction2DPropertiesPanel(functions.get(stringBaseMap.get(model.getValueAt(list.getSelectedRow(), 1).toString())));
                 var back = new JButton("Back");
-                back.addActionListener(ev -> {
-                    listPanel.remove(1);
-
-                });
+                back.addActionListener(ev -> listPanel.remove(1));
                 var delete = new JButton("Delete");
                 delete.addActionListener(ev -> {
                     var selected = list.getSelectedRow();
@@ -531,6 +535,7 @@ public class Graph2DCanvas extends CoordinatedCanvas {
                         return;
                     }
                     var s = model.getValueAt(selected, 1).toString();
+                    //noinspection SuspiciousMethodCalls
                     functions.remove(stringBaseMap.get(s));
                     stringBaseMap.remove(s);
                     listPanel.remove(1);
@@ -544,7 +549,7 @@ public class Graph2DCanvas extends CoordinatedCanvas {
                 listPanel.revalidate();
             }
         });
-        listPanel.setPreferredSize(new Dimension(250, 350));
+        listPanel.setPreferredSize(new Dimension(250, 0));
         return listPanel;
     }
 

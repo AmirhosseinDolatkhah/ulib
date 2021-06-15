@@ -4,7 +4,10 @@ import jmath.datatypes.tuples.Point2D;
 
 @SuppressWarnings("unused")
 public interface Function3D extends Function<Double, Point2D> {
+    Function3D NaN = (x, y) -> Double.NaN;
+
     double valueAt(double x, double y);
+
     default BinaryFunction f() {return new BinaryFunction(this);}
 
     @Override

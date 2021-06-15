@@ -1,10 +1,14 @@
 package visualization.canvas;
 
 import jmath.datatypes.tuples.Point3D;
-import visualization.canvas.CoordinatedScreen;
+import visualization.shapes.shape3d.Area;
+import visualization.shapes.shape3d.Shape3D;
 
-import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 public class Camera extends RenderManager {
     private CoordinatedScreen cs;
@@ -12,10 +16,15 @@ public class Camera extends RenderManager {
     private Point3D pos;
     private Point3D angles;
 
+    private final List<RunnableOnR3> rotateNotified;
+    private final List<RunnableOnR3> moveNotified;
+
     public Camera(CoordinatedScreen cs, Point3D pos, Point3D angles) {
         this.pos = pos;
         this.angles = angles;
         this.cs = cs;
+        rotateNotified = new ArrayList<>();
+        moveNotified = new ArrayList<>();
     }
 
     public Camera(CoordinatedScreen cs) {
@@ -30,6 +39,7 @@ public class Camera extends RenderManager {
         pos.x += dx;
         pos.y += dy;
         pos.z += dz;
+        moveNotified.forEach(e -> e.run(dx, dy, dz));
     }
 
     public void setPos(double x, double y, double z) {
@@ -48,6 +58,7 @@ public class Camera extends RenderManager {
         angles.x += dRoll;
         angles.y += dYaw;
         angles.z += dPitch;
+        rotateNotified.forEach(e -> e.run(dRoll, dYaw, dPitch));
     }
 
     public double getRoll() {
@@ -124,5 +135,26 @@ public class Camera extends RenderManager {
 
     public boolean inViewPort(Point3D p) {
         return p.z < pos.z;
+    }
+
+    public void addRotationObserver(RunnableOnR3... actions) {
+        rotateNotified.addAll(Arrays.asList(actions));
+    }
+
+    public void addMoveObserver(RunnableOnR3... actions) {
+        moveNotified.addAll(Arrays.asList(actions));
+    }
+
+    public List<RunnableOnR3> getRotateNotified() {
+        return rotateNotified;
+    }
+
+    public List<RunnableOnR3> getMoveNotified() {
+        return moveNotified;
+    }
+
+    @FunctionalInterface
+    public interface RunnableOnR3 {
+        void run(double x, double y, double z);
     }
 }

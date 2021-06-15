@@ -1,10 +1,6 @@
 package visualization.canvas;
 
-import utils.Utils;
-
-import javax.swing.*;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 
 public class ImageCanvas extends Graph3DCanvas {
 

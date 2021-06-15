@@ -6,7 +6,9 @@ import java.awt.*;
 public interface Render extends Tick {
     void render(Graphics2D g2d);
 
-    default boolean inViewPort() {return true;}
+    default boolean inViewPort() {
+        return true;
+    }
 
     default void renderIfInView(Graphics2D g2d) {
         if (isVisible() && inViewPort())

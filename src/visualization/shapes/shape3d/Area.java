@@ -227,11 +227,10 @@ public class Area extends Shape3D {
         components.addAll(newArea.getComponents());
         points.clear();
         points.addAll(newArea.getPoints());
-        if (cs instanceof Graph3DCanvas)
-            rotate(new Point3D(),
-                    ((Graph3DCanvas) cs).getRotationAroundCenter().x,
-                    ((Graph3DCanvas) cs).getRotationAroundCenter().y,
-                    ((Graph3DCanvas) cs).getRotationAroundCenter().z);
+        if (cs instanceof Graph3DCanvas gp) {
+            var rac = gp.getRotationAroundCenter();
+            rotate(new Point3D(), rac.x, rac.y, rac.z);
+        }
     }
 
     public void setUpBoundY(double yU) {

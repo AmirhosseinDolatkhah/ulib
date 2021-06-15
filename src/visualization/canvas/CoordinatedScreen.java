@@ -6,6 +6,7 @@ import jmath.datatypes.tuples.Point3D;
 
 import java.awt.*;
 
+@SuppressWarnings("ALL")
 public interface CoordinatedScreen {
     int screenX(double coordinateX);
     int screenY(double coordinateY);
@@ -59,4 +60,3 @@ public interface CoordinatedScreen {
         return new Graph3DCanvas();
     }
 }
-
