@@ -7,10 +7,12 @@ import jmath.functions.utils.Sampling;
 import utils.Utils;
 import visualization.canvas.CoordinatedScreen;
 import visualization.canvas.Graph2DCanvas;
+import visualization.canvas.Graph3DCanvas;
 
 import java.awt.*;
 import java.util.ArrayList;
 
+@SuppressWarnings("SuspiciousNameCombination")
 public final class Curve3D extends Shape3D {
     private Color color;
     private float thickness;
@@ -23,13 +25,13 @@ public final class Curve3D extends Shape3D {
         this.color = color;
         var domain = Sampling.sample(l, u, delta);
         for (var a : arcs)
-            domain.forEach(t -> getPoints().add(a.valueAt(t)));
+            domain.forEach(t -> points.add(a.valueAt(t)));
         xBound = new Point3D(l, u, delta);
         this.arcs = arcs;
     }
 
     public Curve3D(CoordinatedScreen canvas, double l, double u, double delta, Arc3D... arcs) {
-        this(canvas, Utils.randomColor(), 2, l, u, delta, arcs);
+        this(canvas, Utils.randomColor(), 1f, l, u, delta, arcs);
     }
 
     public double getLowBoundX() {
@@ -82,11 +84,17 @@ public final class Curve3D extends Shape3D {
     }
 
     @Override
-    public void render(Graphics2D g2d) {
-        var ps = new ArrayList<Point2D>();
-        points.forEach(p -> ps.add(new Point2D(p.x, p.y)));
+    public boolean inViewPort() {
+        return true;
+    }
+
+    @Override
+    public void render(Graphics2D g2d) { //AHD:: CRITICAL-CHANGE
         g2d.setStroke(new BasicStroke(thickness));
-        Graph2DCanvas.typicalPlotter(ps, color, cs, g2d);
+        g2d.setColor(color);
+        Graph3DCanvas
+                .simplePlotter(points.stream().map(e -> Point3D.rotateImmutably(e, cs.camera().getAngles())).toList(),
+                        cs, g2d);
         super.render(g2d);
     }
 }

@@ -14,13 +14,12 @@ import visualization.render3D.shading.Shader;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static java.lang.Math.*;
 import static utils.Utils.checkBounds;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({ "unused", "SuspiciousNameCombination" })
 public class Area extends Shape3D {
     private Color color;
     private final int numOfSides;

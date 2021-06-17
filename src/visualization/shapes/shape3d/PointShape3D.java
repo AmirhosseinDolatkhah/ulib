@@ -13,6 +13,7 @@ public class PointShape3D extends Shape3D {
 //    private final Point3DMover mover;
     private boolean modelMoverActivated;
 
+    @Deprecated(forRemoval = true)
     public PointShape3D(CoordinatedScreen canvas, Point3D pos, Color color, double radius, boolean isFilled) {
         super(canvas);
         points.add(pos);

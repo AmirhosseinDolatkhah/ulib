@@ -37,10 +37,10 @@ public interface CoordinatedScreen {
     default Point screen(Point3D p) {return new Point();}
 
     default Point screen(AbstractPoint point) {
-        if (point instanceof Point3D)
-            return screen((Point3D) point);
-        if (point instanceof Point2D)
-            return screen((Point2D) point);
+        if (point instanceof Point3D p)
+            return screen(p);
+        if (point instanceof Point2D p)
+            return screen(p);
         throw new RuntimeException("AHD:: Only Point2D and Point3D is Considered");
     }
 

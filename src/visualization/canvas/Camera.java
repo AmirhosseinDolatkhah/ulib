@@ -137,6 +137,10 @@ public class Camera extends RenderManager {
         return p.z < pos.z;
     }
 
+    public boolean inViewPort(double z) {
+        return z < pos.z;
+    }
+
     public void addRotationObserver(RunnableOnR3... actions) {
         rotateNotified.addAll(Arrays.asList(actions));
     }

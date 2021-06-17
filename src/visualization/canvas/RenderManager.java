@@ -92,11 +92,13 @@ public class RenderManager extends ArrayList<Render> implements Render {
 
     protected void renderAction(Graphics2D g2d) {
         var list = new ArrayList<Shape3D>();
-        stream().filter(Area.class::isInstance).map(e -> ((Area) e).getComponents()).forEach(list::addAll);
-        list.sort(Comparator.comparingDouble(f -> f.getCenter().z));
+        stream().filter(Area.class::isInstance).map(e -> ((Shape3D) e).getComponents()).forEach(list::addAll);
+        list.sort(Comparator.comparingDouble(Shape3D::zAvgAccordingToCameraAngles));
         list.forEach(r -> r.renderIfInView(g2d));
         stream().filter(e -> !(e instanceof Area)).forEach(render -> render.renderIfInView(g2d));
+//        forEach(e -> e.render(g2d));
     }
+
 
     public int getRenderCounter() {
         return renderCounter;

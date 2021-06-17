@@ -28,12 +28,10 @@ public class BacktrackAlgorithm implements SemaphoreBase<String> {
     public boolean solve(boolean mrv) {
         Point empty;
         while ((empty = emptyCell(mrv)) != null) {
-            //            acquire("solve");
+            acquire("solve");
             if (empty.x == -1)
                 return false;
             var domain = domain(empty.x, empty.y);
-            if (empty.equals(new Point(0, 9)))
-                System.err.println(domain);
             if (domain.isEmpty()) {
                 domainMap.put(empty, new ArrayList<>(List.of(0, 1)));
                 return false;

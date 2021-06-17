@@ -20,14 +20,14 @@ public class Runner {
         mp.add(gp);
         f.setState("main");
         gp.addRender(vt);
-        unsafeExecutor.execute(() -> System.out.println(vt.getAlgorithm().solve(false) ? "Solved" : "Error"));
+        unsafeExecutor.execute(() -> System.out.println(vt.getAlgorithm().solve(true) ? "Solved" : "Error"));
         gp.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 vt.getAlgorithm().release("solve");
             }
         });
-//        vt.getAlgorithm().getReleaseTimer("solve", 1).start();
+        vt.getAlgorithm().getReleaseTimer("solve", 200).start();
         new Timer(10, e -> gp.repaint()).start();
         SwingUtilities.invokeLater(f);
     }

@@ -1,4 +1,5 @@
 import jmath.datatypes.functions.Surface;
+import jmath.datatypes.tuples.Point3D;
 import lc.kra.system.mouse.GlobalMouseHook;
 import lc.kra.system.mouse.event.GlobalMouseAdapter;
 import lc.kra.system.mouse.event.GlobalMouseEvent;
@@ -19,7 +20,6 @@ import java.util.Random;
 import static java.lang.Math.*;
 
 public class Main {
-    private static boolean run = true;
 
     public static void main(String[] args) {
         var f = new MainFrame();
@@ -38,10 +38,9 @@ public class Main {
 //                gp.start();
 //                gp.addRender(new Curve3D(gp, Color.GREEN, 1f, -4, 4, 0.05,
 //                        x -> new Point3D(sin(x) + 2 * sin(2*x), cos(x) - 2 * cos(2*x), -sin(3*x))));
-                gp.addRender(new Area(gp, Color.GREEN, true, 1f, 0, 2*PI, -1, 1, 0.05, 0.05,
-                        Surface.mobius()));
-//                        gp.addRender(new Area(gp, Color.GREEN, true, 1f, 0, PI, 0, 2*PI, 0.05, 0.05,
-//                                Surface.kleinBottle()));
+//                gp.addRender(new Area(gp, Color.GREEN, true, 1f, 0, 2*PI, -1, 1, 0.05, 0.05,
+//                        Surface.mobius()));
+        gp.addRender(new Area(gp, Color.GREEN, true, 1f, 0, PI, 0, 2 * PI, 0.05, 0.05, Surface.kleinBottle()));
 
         //
 //                gp.addRender(new Curve3D(gp, Color.GREEN, 1f, -4, 4, 0.05, Arc3D
@@ -150,6 +149,7 @@ public class Main {
 //        } finally {
 //            mouseHook.shutdownHook();
 //        }
+//        gp.addRender(new Curve3D(gp, -20, 20, 0.01, t -> new Point3D(t / 5, sin(t), cos(t))));
         SwingUtilities.invokeLater(f);
     }
 }

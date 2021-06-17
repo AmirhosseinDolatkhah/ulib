@@ -1,21 +1,18 @@
 package visualization.animatedmodels;
 
 import jmath.datatypes.functions.Arc3D;
-import jmath.datatypes.functions.Function2D;
 import jmath.datatypes.tuples.Point3D;
 import swingutils.MainFrame;
 import visualization.canvas.CoordinatedScreen;
 import visualization.canvas.Graph3DCanvas;
-import visualization.canvas.Render;
 import visualization.shapes.shape3d.Shape3D;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
 
 import static java.lang.Math.*;
 
+@SuppressWarnings("ALL")
 public class PointMover extends Shape3D {
     private final CoordinatedScreen cs;
 
@@ -27,17 +24,15 @@ public class PointMover extends Shape3D {
     private int pointRadius;
 
     private Arc3D positionFunction;
-    private PointColorSupplier pathColorSupplier;
-    private PointColorSupplier headColorSupplier;
-    private final List<Point3D> path;
+    private Color pathColor;
+    private Color pointColor;
 
     public PointMover(CoordinatedScreen cs, double start) {
         this.cs = cs;
         this.start = start;
-        pathColorSupplier = p -> Color.RED;
-        headColorSupplier = p -> Color.GREEN;
-        positionFunction = t -> new Point3D(t * sin(t), sin(t), cos(t));
-        path = new ArrayList<>(List.of(positionFunction.valueAt(start)));
+        pathColor = Color.RED;
+        pointColor = Color.GREEN;
+        positionFunction = t -> new Point3D(t, sin(t), cos(t));
         points.add(positionFunction.valueAt(start));
         delta = 0.05;
         showPath = true;
@@ -51,7 +46,6 @@ public class PointMover extends Shape3D {
     }
 
     public void move() {
-//        path.add(positionFunction.valueAt(start += delta));
         points.add(positionFunction.valueAt(start += delta));
     }
 
@@ -111,37 +105,34 @@ public class PointMover extends Shape3D {
         this.positionFunction = positionFunction;
     }
 
-    public PointColorSupplier getPathColorSupplier() {
-        return pathColorSupplier;
+    public Color getPathColor() {
+        return pathColor;
     }
 
-    public void setPathColorSupplier(PointColorSupplier pathColorSupplier) {
-        this.pathColorSupplier = pathColorSupplier;
+    public void setPathColor(Color pathColor) {
+        this.pathColor = pathColor;
     }
 
-    public PointColorSupplier getHeadColorSupplier() {
-        return headColorSupplier;
+    public Color getPointColor() {
+        return pointColor;
     }
 
-    public void setHeadColorSupplier(PointColorSupplier headColorSupplier) {
-        this.headColorSupplier = headColorSupplier;
-    }
-
-    public List<Point3D> getPath() {
-        return path;
+    public void setPointColor(Color pointColor) {
+        this.pointColor = pointColor;
     }
 
     @Override
     public void render(Graphics2D g2d) {
+        var t = System.currentTimeMillis();
         if (!showPath && !showHead)
             return;
         var oldColor = g2d.getColor();
         var oldRenderingHints = g2d.getRenderingHints();
-//        var head = Point3D.rotateImmutably(path.get(path.size() - 1), cs.camera().getAngles());
-        var head = points.get(points.size() - 1);
-        if (showPath) {
+        var angles = cs.camera().getAngles();
+        var head = Point3D.rotateImmutably(points.get(points.size() - 1), angles);
+        if (showHead) {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2d.setColor(headColorSupplier.colorOf(head));
+            g2d.setColor(pointColor);
             g2d.fillOval(cs.screenX(head.x) - pointRadius, cs.screenY(head.y) - pointRadius, pointRadius * 2,
                     pointRadius * 2);
         }
@@ -152,17 +143,18 @@ public class PointMover extends Shape3D {
         }
         var oldStroke = g2d.getStroke();
         g2d.setStroke(pathStroke);
-        g2d.setColor(pathColorSupplier.colorOf(head));
-//        Graph3DCanvas.simplePlotter(
-//                path.stream().map(e -> Point3D.rotateImmutably(e, cs.camera().getAngles())).toList(), cs, g2d);
-        Graph3DCanvas.simplePlotter(points, cs, g2d);
+        g2d.setColor(pathColor);
+        Graph3DCanvas
+                .simplePlotter(points.stream().map(e -> Point3D.rotateImmutably(e, angles)).toList(),
+                        cs, g2d);
         g2d.setStroke(oldStroke);
         g2d.setColor(oldColor);
+        System.err.println(System.currentTimeMillis() - t);
     }
 
-    @FunctionalInterface
-    public interface PointColorSupplier {
-        Color colorOf(Point3D p);
+    @Override
+    public boolean inViewPort() {
+        return true;
     }
 
     public static void main(String[] args) {
@@ -174,12 +166,12 @@ public class PointMover extends Shape3D {
 
         gp.addRender(mover);
 
-        new Timer(10, e -> {
-            mover.move();
-            mover.rotate(0.01, 0.03, 0.02);
-            gp.repaint();
-        }).start();
 
         SwingUtilities.invokeLater(f);
+
+        while (true) {
+            mover.move();
+            gp.repaint();
+        }
     }
 }

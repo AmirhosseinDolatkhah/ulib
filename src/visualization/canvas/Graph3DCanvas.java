@@ -53,21 +53,17 @@ public class Graph3DCanvas extends Graph2DCanvas {
                 var yDif = (mousePoint.y - e.getY()) / mouseSensitivity;
                 if (e.isControlDown() || e.isAltDown()) {
                     if (button[0] == MouseEvent.BUTTON1) {
-                        if (e.isControlDown()) {
-                            camera.getShape3d().forEach(shape -> shape.rotate(-yDif, xDif, 0));
-                            camera.rotate(-yDif, xDif, 0);
-                        }
+                        if (e.isControlDown())
+                            camera.rotate(0, xDif, yDif);
                         if (e.isAltDown()) {
-                            getRenderManager().getShape3d().forEach(shape -> shape.rotate(new Point3D(), -yDif, xDif, 0));
+//                            getRenderManager().getShape3d().forEach(shape -> shape.rotate(new Point3D(), -yDif, xDif, 0));
                             rotationAroundCenter.addVector(-yDif, xDif, 0);
                         }
                     } else if (button[0] == MouseEvent.BUTTON3) {
-                        if (e.isControlDown()) {
-                            getRenderManager().getShape3d().forEach(shape -> shape.rotate(0, 0, yDif + xDif));
+                        if (e.isControlDown())
                             camera.rotate(0, 0, yDif + xDif);
-                        }
                         if (e.isAltDown()) {
-                            camera.getShape3d().forEach(shape -> shape.rotate(new Point3D(), 0, 0, yDif + xDif));
+//                            camera.getShape3d().forEach(shape -> shape.rotate(new Point3D(), 0, 0, yDif + xDif));
                             rotationAroundCenter.addVector(0, 0, xDif + yDif);
                         }
                     }
@@ -78,18 +74,12 @@ public class Graph3DCanvas extends Graph2DCanvas {
         });
 
         addMouseMotionListener(new MouseAdapter() {
-            @SuppressWarnings("SuspiciousNameCombination")
             @Override
             public void mouseMoved(MouseEvent e) {
                 if (!cameraFocused[0])
                     return;
                 var xDif = (mousePoint.x - e.getX()) / mouseSensitivity / 20;
                 var yDif = (mousePoint.y - e.getY()) / mouseSensitivity / 20;
-                getRenderManager().getShape3d().forEach(
-                        shape -> shape.rotate(
-                                -yDif, xDif, yDif + xDif
-                        )
-                );
                 camera.rotate(-yDif, xDif, yDif + xDif);
                 repaint();
             }
@@ -127,11 +117,14 @@ public class Graph3DCanvas extends Graph2DCanvas {
             xa[counter] = cs.screenX(p.x);
             ya[counter++] = cs.screenY(p.y);
         }
+        var oldRenderingHints = g2d.getRenderingHints();
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.drawPolyline(xa, ya, xa.length);
+        g2d.setRenderingHints(oldRenderingHints);
     }
 
     public Point3D getRotationAroundCenter() {
-        return rotationAroundCenter.immutable();
+        return rotationAroundCenter;
     }
 
     @Override

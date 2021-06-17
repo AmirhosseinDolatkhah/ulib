@@ -168,7 +168,7 @@ public class Shape3D implements Render, Comparable<Shape3D>, Serializable, Funct
         this.label = label;
     }
 
-    @Deprecated // problem in removing common points of components
+    @Deprecated(forRemoval = true) // problem in removing common points of components
     public void removeComponents(int... indexes) {
         for (var i : indexes) {
             points.removeAll(components.get(i).points);
@@ -181,20 +181,31 @@ public class Shape3D implements Render, Comparable<Shape3D>, Serializable, Funct
         return null;
     }
 
-    @Override // There is a problem in sorting
+    @Override
     public void render(Graphics2D g2d) {
-        try {
-            Collections.sort(components);
-            components.forEach(c -> c.render(g2d));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        if (components.stream().allMatch(Area.class::isInstance))
+            return;
+        components.stream().sorted().forEach(c -> c.renderIfInView(g2d));
         if (label.getLabel() != null) {
             var c = cs.screen(getCenter());
             g2d.setColor(Color.GREEN);
-            g2d.setFont(new Font("serif", Font.PLAIN, 9));
+            g2d.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 9));
             g2d.drawString(label.getLabel(), c.x, c.y);
         }
+    }
+
+    public double zAvgAccordingToCameraAngles() {
+        return centerAccordingToCameraAngles().z;
+    }
+
+    public Point3D centerAccordingToCameraAngles() {
+        var angles = cs.camera().getAngles();
+        return getCenter().rotate(angles.x, angles.y, angles.z);
+    }
+
+    @Override
+    public boolean inViewPort() {
+        return cs.camera().inViewPort(zAvgAccordingToCameraAngles());
     }
 
     @Override
@@ -210,7 +221,7 @@ public class Shape3D implements Render, Comparable<Shape3D>, Serializable, Funct
 
     @Override
     public int compareTo(Shape3D o) {
-        return Double.compare(getCenter().z, o.getCenter().z);
+        return Double.compare(zAvgAccordingToCameraAngles(), o.zAvgAccordingToCameraAngles());
     }
 
     @FunctionalInterface

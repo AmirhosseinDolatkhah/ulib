@@ -71,8 +71,8 @@ public final class Line3D extends Shape3D {
     public void render(Graphics2D g2d) {
         g2d.setColor(color);
         g2d.setStroke(new BasicStroke(thickness));
-        var s = cs.screen(start);
-        var e = cs.screen(end);
+        var s = cs.screen(Point3D.rotateImmutably(start, cs.camera().getAngles()));
+        var e = cs.screen(Point3D.rotateImmutably(end, cs.camera().getAngles()));
         g2d.drawLine(s.x, s.y, e.x, e.y);
         super.render(g2d);
     }

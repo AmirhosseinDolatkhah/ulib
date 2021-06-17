@@ -74,8 +74,7 @@ public final class FlatSurface extends Shape3D {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof FlatSurface)) return false;
-        FlatSurface flatSurface = (FlatSurface) o;
+        if (!(o instanceof FlatSurface flatSurface)) return false;
         return Objects.equals(getPoints(), flatSurface.getPoints());
     }
 
@@ -85,15 +84,10 @@ public final class FlatSurface extends Shape3D {
     }
 
     @Override
-    public boolean inViewPort() {
-        return cs.camera().inViewPort(getCenter());
-    }
-
-    @Override
     public void render(Graphics2D g2d) {
         Polygon poly = new Polygon();
         for (var p : points) {
-            var pp = cs.screen(p);
+            var pp = cs.screen(Point3D.rotateImmutably(p, cs.camera().getAngles())); //AHD:: CRITICAL-CHANGE
             poly.addPoint(pp.x, pp.y);
         }
         g2d.setColor(color);
