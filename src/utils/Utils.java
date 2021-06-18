@@ -890,6 +890,7 @@ public final class Utils {
         NUMBER_OF_LETTERS
     }
 
+    @Deprecated
     public static void computeMetrics(String dir) {
         int lineCounter = 0;
         int emptyCounter = 0;
@@ -962,6 +963,7 @@ public final class Utils {
         showTable(cols, rows, cols.stream().map(s -> s.length() + 8).toList());
     }
 
+    @Deprecated
     public static void showTable(List<String> cols, List<List<String>> rows, List<Integer> width) {
         var sb = new StringBuilder();
         int colNumber = cols.size();
