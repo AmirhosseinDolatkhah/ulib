@@ -198,4 +198,6 @@ public class Point2D extends SortableTuple<Double> implements Comparable<Point2D
     public double squareOfDistanceFromOrigin() {
         return x * x + y * y;
     }
+    
+    
 }

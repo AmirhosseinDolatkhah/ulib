@@ -49,24 +49,24 @@ public class MainFrame extends JFrame implements Runnable, StateBase<String, Con
         setLocationRelativeTo(null);
         setLocationByPlatform(false);
 
-//        try {
-//            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-//                if ("Nimbus".equals(info.getName())) {
-//                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-//                    break;
-//                }
-//            }
-//        } catch (Exception e) {
-//            System.exit(-1);
-//        }
-//
-//        handleNimbusProperties();
-
         try {
-            UIManager.setLookAndFeel(new DarculaLaf());
-        } catch (UnsupportedLookAndFeelException e) {
-            e.printStackTrace();
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            System.exit(-1);
         }
+
+        handleNimbusProperties();
+
+//        try {
+//            UIManager.setLookAndFeel(new DarculaLaf());
+//        } catch (UnsupportedLookAndFeelException e) {
+//            e.printStackTrace();
+//        }
 
         addWindowListener(new WindowAdapter() {
             @Override

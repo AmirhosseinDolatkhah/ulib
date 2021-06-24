@@ -3,9 +3,12 @@ package visualization.shapes.shape3d;
 import jmath.datatypes.functions.Function;
 import jmath.datatypes.functions.Mapper3D;
 import jmath.datatypes.tuples.Point3D;
+import utils.annotation.NotFinal;
 import visualization.canvas.CoordinatedScreen;
 import visualization.canvas.Render;
 
+import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
 import java.io.Serializable;
 import java.util.*;
@@ -201,6 +204,15 @@ public class Shape3D implements Render, Comparable<Shape3D>, Serializable, Funct
     public Point3D centerAccordingToCameraAngles() {
         var angles = cs.camera().getAngles();
         return getCenter().rotate(angles.x, angles.y, angles.z);
+    }
+
+    @NotFinal
+    public Timer getTimer(Runnable job, int delayMillis) {
+        return new Timer(delayMillis, e -> {
+            job.run();
+            if (cs instanceof JComponent component)
+                component.repaint();
+        });
     }
 
     @Override

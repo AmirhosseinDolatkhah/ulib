@@ -14,6 +14,7 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.jfugue.pattern.Pattern;
 import org.jfugue.player.Player;
 import org.jfugue.theory.ChordProgression;
+import utils.annotation.NotFinal;
 import utils.predicate.IntBinaryPredicate;
 import visualization.canvas.*;
 import visualization.canvas.Canvas;
@@ -40,6 +41,7 @@ import java.util.function.IntUnaryOperator;
 import static utils.Utils.TextFileInfo.*;
 
 @SuppressWarnings("unused")
+@NotFinal
 public final class Utils {
 
     public static final String nirCMDPath;
@@ -950,11 +952,12 @@ public final class Utils {
 
     //////////// mp3 file
 
+    @NotFinal
     public static void mp3Merger(String destination, String... mp3Files) throws IOException {
         var sb = new StringBuilder("copy /b \"");
         for (var f : mp3Files)
             sb.append(f).append("\" \"");
-        Runtime.getRuntime().exec(sb.substring(0, sb.length() - 1) + " -o " + destination);
+        Runtime.getRuntime().exec(sb.substring(0, sb.length() - 1) + destination);
     }
 
     /////////// show text table

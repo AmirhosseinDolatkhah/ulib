@@ -1,18 +1,20 @@
 package visualization.canvas;
 
+import utils.Utils;
 import visualization.shapes.shape3d.Area;
 import visualization.shapes.shape3d.FlatSurface;
 import visualization.shapes.shape3d.Shape3D;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("ALL")
+@SuppressWarnings("unused")
 public class RenderManager extends ArrayList<Render> implements Render {
     private static final RenderManager unsafe = new RenderManager();
 
@@ -143,6 +145,11 @@ public class RenderManager extends ArrayList<Render> implements Render {
         return res;
     }
 
+    public void saveFrame(String fileAddress, int width, int height, boolean antiAlias) throws IOException {
+        Utils.saveRenderedImage(getFrame(width, height, antiAlias), fileAddress, "png");
+    }
+
+    @Deprecated
     public static RenderManager resetAndGetUnsafeRenderManager() {
         unsafe.clear();
         return unsafe;
