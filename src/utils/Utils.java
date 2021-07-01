@@ -107,7 +107,9 @@ public final class Utils {
     }
 
     public static int[] getIntColorArrayOfImage(BufferedImage bi) {
-        return ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
+        return bi.getRaster().getDataBuffer() instanceof DataBufferInt b ?
+                b.getData() :
+                ((DataBufferInt) exactCloneWithARGB(bi).getRaster().getDataBuffer()).getData();
     }
 
     public static void multiThreadIntArraySetter(int[] src, IntUnaryOperator func, int numOfThreads) {
@@ -234,10 +236,13 @@ public final class Utils {
     }
 
     public static BufferedImage readImage(String path) throws IOException {
-        var img = ImageIO.read(new File(path));
-        var res = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        return exactCloneWithARGB(ImageIO.read(new File(path)));
+    }
+
+    private static BufferedImage exactCloneWithARGB(BufferedImage source) {
+        var res = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
         var g = res.createGraphics();
-        g.drawImage(img, 0, 0, null);
+        g.drawImage(source, 0, 0, null);
         g.dispose();
         return res;
     }
@@ -312,7 +317,18 @@ public final class Utils {
         );
     }
 
-
+    public static BufferedImage squareBaseSample(BufferedImage source, int squareWidth, int squareHeight) {
+        var ws = source.getWidth();
+        var w = ws / squareWidth;
+        var h = source.getHeight() / squareHeight;
+        var res = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        var s = getIntColorArrayOfImage(source);
+        var c = getIntColorArrayOfImage(res);
+        for (int i = 0; i < h; i++)
+            for (int j = 0; j < w; j++)
+                c[i * w + j] = s[i * squareHeight * ws + j * squareWidth];
+        return res;
+    }
     //////////////////////
 
     public static <T> AtomicReference<T> checkTimePerform(
@@ -1024,6 +1040,11 @@ public final class Utils {
         void act(T t);
     }
 
+    /////////////////// Temp
+
+
+    //////////////////
+
     public static void main(String[] args) throws IOException {
 //        saveRenderedImage(glitchedCloneOfImage(readImage("tmp/me.jpg"), (i, j) -> (int) (Math.random() * Integer.MAX_VALUE),
 //                () -> Math.sin(tmp += Math.random())), "this.png", "png");
@@ -1045,8 +1066,9 @@ public final class Utils {
 //                )),
 //                "tmp/spatial-mapper/this" + System.currentTimeMillis() + ".png", "png");
 
+//        saveRenderedImage(cloneAffectivelyImage(readImage("tmp/me.jpg"), color -> color, (i, j) -> i < 1000 * Math.sin(i * 600 + j)),
+//                "this.png", "png");
 
-        //        saveRenderedImage(cloneAffectivelyImage(readImage("tmp/me.jpg"), color -> color,
-//                (i, j) -> i < 1000 * Math.sin(i * 600 + j)), "this.png", "png");
+        saveRenderedImage(squareBaseSample(readImage("tmp/me.jpg"), 10, 20), "this.png", "png");
     }
 }
