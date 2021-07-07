@@ -46,7 +46,7 @@ public class GameOfLife2D implements Render {
             i += row;
         while (j < 0)
             j += col;
-        return cells[i%row][j%col] ? 1 : 0;
+        return cells[i % row][j % col] ? 1 : 0;
     }
 
     private int numOfNeighbors(int i, int j) {

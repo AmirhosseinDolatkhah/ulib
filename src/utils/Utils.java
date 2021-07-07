@@ -2,10 +2,8 @@ package utils;
 
 import com.sun.management.OperatingSystemMXBean;
 import jmath.datatypes.functions.ColorFunction;
-import jmath.datatypes.functions.Function2D;
 import jmath.datatypes.functions.IntMapper2D;
 import jmath.datatypes.functions.Mapper2D;
-import jmath.datatypes.tuples.Point2D;
 import jmath.datatypes.tuples.Point3D;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.io.MemoryUsageSetting;
@@ -20,8 +18,9 @@ import visualization.canvas.*;
 import visualization.canvas.Canvas;
 
 import javax.imageio.ImageIO;
-import javax.sound.midi.Soundbank;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.RenderedImage;
@@ -40,7 +39,7 @@ import java.util.function.IntUnaryOperator;
 
 import static utils.Utils.TextFileInfo.*;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({ "unused", "SpellCheckingInspection" })
 @NotFinal
 public final class Utils {
 
@@ -76,7 +75,6 @@ public final class Utils {
     }
 
     ///////////////////
-
     public static BufferedImage getCanvasImage(Canvas canvas) {
         var res = new BufferedImage(canvas.getWidth(), canvas.getHeight(), BufferedImage.TYPE_INT_RGB);
         var g2d = res.createGraphics();
@@ -110,6 +108,10 @@ public final class Utils {
         return bi.getRaster().getDataBuffer() instanceof DataBufferInt b ?
                 b.getData() :
                 ((DataBufferInt) exactCloneWithARGB(bi).getRaster().getDataBuffer()).getData();
+    }
+
+    public static int[][] getIntColorArray2dOfImage(BufferedImage bi) {
+        return getAs2dArray(getIntColorArrayOfImage(bi), bi.getWidth(), bi.getHeight());
     }
 
     public static void multiThreadIntArraySetter(int[] src, IntUnaryOperator func, int numOfThreads) {
@@ -182,11 +184,11 @@ public final class Utils {
         return res;
     }
 
+    @Deprecated(forRemoval = true)
     public static BufferedImage createMergeImageFromImageSequence(BufferedImage[] imageSequence) {
         if (imageSequence == null || imageSequence.length == 0)
-            throw new RuntimeException("AHD:: image sequence is null or empty");
-        var res = new BufferedImage(imageSequence[0].getWidth(), imageSequence[0].getHeight(),
-                BufferedImage.TYPE_INT_ARGB);
+            throw new IllegalArgumentException("AHD:: image sequence is null or empty");
+        var res = new BufferedImage(imageSequence[0].getWidth(), imageSequence[0].getHeight(), BufferedImage.TYPE_INT_ARGB);
         var g2d = res.createGraphics();
         Arrays.stream(imageSequence).forEach(bi -> g2d.drawImage(bi, 0, 0, null));
         g2d.dispose();
@@ -317,6 +319,31 @@ public final class Utils {
         );
     }
 
+    public static int[][] getAs2dArray(int[] array, int width, int height) {
+        var res = new int[height][width];
+        for (int i = 0; i < height; i++)
+            System.arraycopy(array, i * width, res[i], 0, width);
+        return res;
+    }
+
+    public static BufferedImage createMergeImageFromImageSequence(Collection<BufferedImage> images, IntBinaryOperator imgIndexProvider,
+            int x, int y, int width, int height) {
+        var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        var c = getIntColorArrayOfImage(res);
+        var ss = images.stream().map(Utils::getIntColorArray2dOfImage).toList();
+        var size = images.size();
+        for (int i = 0; i < height; i++)
+            for (int j = 0; j < width; j++)
+                c[i * width + j] = ss.get(imgIndexProvider.applyAsInt(i, j) % size)[y + i][x + j];
+        return res;
+    }
+
+    public static BufferedImage createMergeImageFromImageSequence(Collection<BufferedImage> images, IntBinaryOperator imgIndexProvider) {
+        return createMergeImageFromImageSequence(images, imgIndexProvider, 0, 0,
+                images.stream().mapToInt(BufferedImage::getWidth).min().orElse(0),
+                images.stream().mapToInt(BufferedImage::getHeight).min().orElse(0));
+    }
+
     public static BufferedImage squareBaseSample(BufferedImage source, int squareWidth, int squareHeight) {
         var ws = source.getWidth();
         var w = ws / squareWidth;
@@ -328,6 +355,31 @@ public final class Utils {
             for (int j = 0; j < w; j++)
                 c[i * w + j] = s[i * squareHeight * ws + j * squareWidth];
         return res;
+    }
+
+    public static BufferedImage getRotatedImage(BufferedImage bi, double radian) {
+        final double sin = Math.abs(Math.sin(radian));
+        final double cos = Math.abs(Math.cos(radian));
+        final int w = (int) Math.floor(bi.getWidth() * cos + bi.getHeight() * sin);
+        final int h = (int) Math.floor(bi.getHeight() * cos + bi.getWidth() * sin);
+        final BufferedImage rotatedImage = new BufferedImage(w, h, bi.getType());
+        final AffineTransform at = new AffineTransform();
+        at.translate(w / 2.0, h / 2.0);
+        at.rotate(radian,0, 0);
+        at.translate(-bi.getWidth() / 2.0, -bi.getHeight() / 2.0);
+        final AffineTransformOp rotateOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
+        rotateOp.filter(bi, rotatedImage);
+        return rotatedImage;
+    }
+
+    public static BufferedImage getScaledImage(BufferedImage bi, double xFactor, double yFactor) {
+        final int w = bi.getWidth();
+        final int h = bi.getHeight();
+        BufferedImage scaledImage = new BufferedImage((int) (w * xFactor), (int) (h * yFactor), BufferedImage.TYPE_INT_ARGB);
+        final AffineTransform at = AffineTransform.getScaleInstance(xFactor, yFactor);
+        final AffineTransformOp ato = new AffineTransformOp(at, AffineTransformOp.TYPE_BICUBIC);
+        scaledImage = ato.filter(bi, scaledImage);
+        return scaledImage;
     }
     //////////////////////
 
@@ -534,6 +586,7 @@ public final class Utils {
                 return;
             }
         }
+        absPath = absPath.endsWith("." + formatName) ? absPath : absPath + '.' + formatName;
         ImageIO.write(img, formatName, new File(absPath));
     }
 
@@ -1069,6 +1122,12 @@ public final class Utils {
 //        saveRenderedImage(cloneAffectivelyImage(readImage("tmp/me.jpg"), color -> color, (i, j) -> i < 1000 * Math.sin(i * 600 + j)),
 //                "this.png", "png");
 
-        saveRenderedImage(squareBaseSample(readImage("tmp/me.jpg"), 10, 20), "this.png", "png");
+//        saveRenderedImage(squareBaseSample(readImage("tmp/me.jpg"), 10, 20), "this.png", "png");
+//        saveRenderedImage(createMergeImageFromImageSequence(List.of(squareBaseSample(readImage("tmp/img_2.png"), 4, 4),
+//                readImage("tmp/img.png"), squareBaseSample(getRotatedImage(readImage("tmp/img_2.png"), Math.PI), 4, 4)),
+//                (i, j) -> Math.sin(i / 4.0) < Math.tan(j / 4.0) ? 0 : Math.sin(i / 8.0) < Math.cos(j / 8.0) ? 2 : 1), "this.png",
+//                "png");
+
+        saveRenderedImage(getScaledImage(readImage("tmp/img_2.png"), 5, 5), "this", "png");
     }
 }
