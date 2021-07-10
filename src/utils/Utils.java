@@ -1123,11 +1123,11 @@ public final class Utils {
 //                "this.png", "png");
 
 //        saveRenderedImage(squareBaseSample(readImage("tmp/me.jpg"), 10, 20), "this.png", "png");
-//        saveRenderedImage(createMergeImageFromImageSequence(List.of(squareBaseSample(readImage("tmp/img_2.png"), 4, 4),
+//        saveRenderedImage(createMergeImageFromImageSequence(List.of(squareBaseSample(getRotatedImage(readImage("tmp/img_2.png"), Math.PI / 2), 4, 4),
 //                readImage("tmp/img.png"), squareBaseSample(getRotatedImage(readImage("tmp/img_2.png"), Math.PI), 4, 4)),
-//                (i, j) -> Math.sin(i / 4.0) < Math.tan(j / 4.0) ? 0 : Math.sin(i / 8.0) < Math.cos(j / 8.0) ? 2 : 1), "this.png",
+//                (i, j) -> Math.sin(i / 4.0) < Math.tan(j / 4.0) ? 0 : 1), "this.png",
 //                "png");
 
-        saveRenderedImage(getScaledImage(readImage("tmp/img_2.png"), 5, 5), "this", "png");
+//        saveRenderedImage(getScaledImage(readImage("tmp/img_2.png"), 5, 5), "this", "png");
     }
 }
