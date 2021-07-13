@@ -17,7 +17,7 @@ public class Grid2DPathFinderAlgorithm implements SemaphoreBase<String> {
     private int[][] info;
     private final int rows;
     private final int cols;
-    private final HashMap<String, Semaphore> semaphoreMap;
+    private final Map<String, Semaphore> semaphoreMap;
 
     public Grid2DPathFinderAlgorithm(String[][] cells) {
         this.cells = cells;

@@ -1,4 +1,5 @@
 import jmath.datatypes.functions.Surface;
+import jmath.datatypes.graph.Graph;
 import jmath.datatypes.tuples.Point3D;
 import lc.kra.system.mouse.GlobalMouseHook;
 import lc.kra.system.mouse.event.GlobalMouseAdapter;
@@ -25,22 +26,23 @@ public class Main {
         var f = new MainFrame();
         var gp = new Graph3DCanvas();
         f.add(gp);
-//                var g = new Graph<Point3D>();
-//                g.setCs(gp);
+                var g = new Graph<Point3D>();
+                g.setCs(gp);
 //                g.addNode(new Point3D(0, 1, 1), "1");
 //                g.addNode(new Point3D(1, 0, 1), "2");
 //                g.addNode(new Point3D(1, 1, 0), "3");
 //                g.addEdge("1", "2");
 //                g.addEdge("2", "3");
-//                gp.addRender(g);
-//                gp.getRenderManager().addTick(() -> g.addNode(new Point3D(Math.random() + 5, Math.random() + 5, Math.random() + 5), String.valueOf(Math.random())));
-//                gp.getRenderManager().addTick(() -> gp.rotateShapes(0.1, 0.2, 0.3));
-//                gp.start();
+                gp.addRender(g);
+                gp.getRenderManager().addTick(() -> g.addNode(new Point3D(Math.random() + 5, Math.random() + 5, Math.random() + 5), String.valueOf(Math.random())));
+                gp.getRenderManager().addTick(() -> gp.rotateShapes(0.1, 0.2, 0.3));
+//        new Timer(10, e -> gp.repaint()).start();
+                gp.start();
 //                gp.addRender(new Curve3D(gp, Color.GREEN, 1f, -4, 4, 0.05,
 //                        x -> new Point3D(sin(x) + 2 * sin(2*x), cos(x) - 2 * cos(2*x), -sin(3*x))));
 //                gp.addRender(new Area(gp, Color.GREEN, true, 1f, 0, 2*PI, -1, 1, 0.05, 0.05,
 //                        Surface.mobius()));
-        gp.addRender(new Area(gp, Color.GREEN, true, 1f, 0, PI, 0, 2 * PI, 0.05, 0.05, Surface.kleinBottle()));
+//        gp.addRender(new Area(gp, Color.GREEN, true, 1f, 0, PI, 0, 2 * PI, 0.05, 0.05, Surface.kleinBottle()));
 
         //
 //                gp.addRender(new Curve3D(gp, Color.GREEN, 1f, -4, 4, 0.05, Arc3D

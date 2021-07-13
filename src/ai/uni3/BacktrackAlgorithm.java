@@ -38,6 +38,7 @@ public class BacktrackAlgorithm implements SemaphoreBase<String> {
             }
             for (var e : domain) {
                 cells[empty.x][empty.y] = e;
+//                forwardChecking(empty);
                 if (solve(mrv))
                     return true;
                 domainMap.get(empty).remove(e);
@@ -45,6 +46,10 @@ public class BacktrackAlgorithm implements SemaphoreBase<String> {
             cells[empty.x][empty.y] = -1;
         }
         return true;
+    }
+
+    private boolean forwardChecking(Point point) {
+        return false;
     }
 
     public Map<Point, List<Integer>> getDomainMap() {

@@ -221,4 +221,10 @@ public class Database {
         return "Database{" + "lambda1=" + lambda1 + ", lambda2=" + lambda2 + ", lambda3=" + lambda3 + ", epsilon=" + epsilon
                 + ", unigram=" + unigram + '}';
     }
+
+    public static void main(String[] args) throws FileNotFoundException {
+        var db = new Database("tmp/ai4/rt-polarity.pos", "tmp/ai4/rt-polarity.neg", false);
+        System.out.println(db.positive.entrySet().stream().sorted(Map.Entry.comparingByValue()).toList());
+        System.out.println(db.negative.entrySet().stream().sorted(Map.Entry.comparingByValue()).toList());
+    }
 }

@@ -46,8 +46,8 @@ public class PathFinderVisualPanel extends GridPlain2D {
                     }
 
                     @Override
-                    public Font getFont() {
-                        return new Font(Font.SANS_SERIF, Font.BOLD, 20);
+                    public CoordinatedScreen cs() {
+                        return cs;
                     }
                 });
                 tile.setVisible(() -> visibilityOf(algorithm.getCells()[finalI][finalJ]));

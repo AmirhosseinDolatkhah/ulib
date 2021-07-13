@@ -3,13 +3,16 @@ package ai.uni;
 import swingutils.MainFrame;
 import utils.Utils;
 import utils.supplier.StringSupplier;
+import visualization.canvas.CoordinatedScreen;
 import visualization.canvas.Graph3DCanvas;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,8 +32,8 @@ public final class Runner {
         var f = new MainFrame();
         f.add(gp);
         SwingUtilities.invokeLater(f);
-        var timer = algo.getReleaseTimer("step", 5);
-        gp.start();
+        var timer = algo.getReleaseTimer("step", 100);
+        new Timer(35, e -> gp.repaint()).start();
         var initRobot = algo.findRobot();
         gp.addMouseListener(new MouseAdapter() {
             private boolean running = false;
@@ -105,8 +108,8 @@ public final class Runner {
                     }
 
                     @Override
-                    public Font getFont() {
-                        return new Font(Font.SANS_SERIF, Font.BOLD, 12);
+                    public CoordinatedScreen cs() {
+                        return gp;
                     }
                 });
                 if (text.contains("R ["))
