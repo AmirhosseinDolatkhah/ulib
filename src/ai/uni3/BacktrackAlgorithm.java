@@ -15,9 +15,11 @@ public class BacktrackAlgorithm implements SemaphoreBase<String> {
     private final int rows;
     private final int cols;
     private final Map<Point, List<Integer>> domainMap;
+    private final CheckingMethod checkingMethod;
 
-    public BacktrackAlgorithm(int[][] cells) {
+    public BacktrackAlgorithm(int[][] cells, CheckingMethod checkingMethod)  {
         this.cells = cells;
+        this.checkingMethod = checkingMethod;
         domainMap = new HashMap<>();
         rows = cells.length;
         cols = cells[0].length;
@@ -25,50 +27,77 @@ public class BacktrackAlgorithm implements SemaphoreBase<String> {
         addSemaphore("solve");
     }
 
-    public boolean solve(boolean mrv) {
-        Point empty;
-        while ((empty = emptyCell(mrv)) != null) {
+    public boolean solve() {
+        Point cell;
+        if ((cell = mrv()) != null) {
             acquire("solve");
-            if (empty.x == -1)
-                return false;
-            var domain = domain(empty.x, empty.y);
-            if (domain.isEmpty()) {
-                domainMap.put(empty, new ArrayList<>(List.of(0, 1)));
-                return false;
-            }
+            var domain = domain(cell.x, cell.y);
             for (var e : domain) {
-                cells[empty.x][empty.y] = e;
-//                forwardChecking(empty);
-                if (solve(mrv))
+                if (!check(checkingMethod, e, cell))
+                    continue;
+                cells[cell.x][cell.y] = e;
+                if (solve())
                     return true;
-                domainMap.get(empty).remove(e);
+                domainMap.get(cell).remove(e);
             }
-            cells[empty.x][empty.y] = -1;
+            cells[cell.x][cell.y] = -1;
+            domainMap.put(cell, new ArrayList<>(List.of(0, 1)));
+            return false;
         }
         return true;
     }
 
-    private boolean forwardChecking(Point point) {
-        return false;
+    private int countConstraints(int value, int i, int j, CheckingMethod checkingMethod) {
+        var deepClone = new HashMap<Point, List<Integer>>();
+        for (var kv : domainMap.entrySet())
+            deepClone.put(kv.getKey(), new ArrayList<>(kv.getValue()));
+        var copy = cells[i][j];
+        try {
+            cells[i][j] = value;
+            int res = 0;
+            for (var kv : deepClone.entrySet()) {
+                var p = kv.getKey();
+                var domain = kv.getValue();
+                if (cells[p.x][p.y] != -1)
+                    continue;
+                int failureCount = 0;
+                for (int k = 0; k < domain.size(); k++) {
+                    var d = domain.get(k);
+                    if (!isPossible(d, p.x, p.y)) {
+                        domain.remove(d);
+                        failureCount++;
+                        k--;
+                    }
+                }
+                if (domain.isEmpty())
+                    return -1;
+                if (checkingMethod == CheckingMethod.MAC && domain.size() == 1)
+                    return countConstraints(domain.get(0), p.x, p.y, CheckingMethod.MAC);
+                res += failureCount;
+            }
+            return res;
+        } finally {
+            cells[i][j] = copy;
+        }
+    }
+
+    private boolean check(CheckingMethod checkingMethod, int value, Point point) {
+        return countConstraints(value, point.x, point.y, checkingMethod) != -1;
     }
 
     public Map<Point, List<Integer>> getDomainMap() {
         return domainMap;
     }
 
-    private Point emptyCell(boolean mrv) {
-        int size = mrv ? 3 : -1;
+    private Point mrv() {
         Point res = null;
+        int maxSize = 3;
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++)
                 if (cells[i][j] == -1) {
                     var tmp = domain(i, j).size();
-                    if (tmp == 0) {
-                        domainMap.put(new Point(i, j), new ArrayList<>(List.of(0, 1)));
-                        return new Point(-1, -1);
-                    }
-                    if (mrv && size > tmp || !mrv && size < tmp) {
-                        size = tmp;
+                    if (maxSize > tmp) {
+                        maxSize = tmp;
                         res = new Point(i, j);
                     }
                 }

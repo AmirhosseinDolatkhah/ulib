@@ -19,7 +19,7 @@ public interface StringSupplier extends NoArgFunction<String> {
     }
 
     default Font getFont() {
-        return new Font(defaultFont, defaultFontStyle, (int) (defaultFontSize * (cs() == null ? 1 : cs().scaleX() / 100)));
+        return new Font(defaultFont, defaultFontStyle, (int) (defaultFontSize() * (cs() == null ? 1 : cs().scaleX() / 100)));
     }
 
     default Point getPosOnScreen() {
@@ -28,6 +28,10 @@ public interface StringSupplier extends NoArgFunction<String> {
 
     default CoordinatedScreen cs() {
         return null;
+    }
+
+    default int defaultFontSize() {
+        return defaultFontSize;
     }
 
     @Override

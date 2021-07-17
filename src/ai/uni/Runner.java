@@ -109,7 +109,12 @@ public final class Runner {
 
                     @Override
                     public CoordinatedScreen cs() {
-                        return gp;
+                        return vp.getCs();
+                    }
+
+                    @Override
+                    public int defaultFontSize() {
+                        return 8;
                     }
                 });
                 if (text.contains("R ["))

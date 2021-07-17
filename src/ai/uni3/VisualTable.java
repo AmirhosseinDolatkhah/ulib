@@ -2,7 +2,6 @@ package ai.uni3;
 
 import utils.supplier.StringSupplier;
 import visualization.canvas.CoordinatedScreen;
-import visualization.canvas.Graph3DCanvas;
 import visualization.shapes.shape2d.grid2d.GridPlain2D;
 
 import java.awt.*;
@@ -19,7 +18,7 @@ public class VisualTable extends GridPlain2D {
     public VisualTable(CoordinatedScreen cs, int[][] cells) {
         super(cs, cells.length, cells[0].length);
         this.cells = cells;
-        algorithm = new BacktrackAlgorithm(cells);
+        algorithm = new BacktrackAlgorithm(cells, CheckingMethod.MAC);
         gridColor = Color.WHITE;
         for (int i = 0; i < numOfRows; i++)
             for (int j = 0; j < numOfCols; j++) {

@@ -1129,5 +1129,12 @@ public final class Utils {
 //                "png");
 
 //        saveRenderedImage(getScaledImage(readImage("tmp/img_2.png"), 5, 5), "this", "png");
+
+        showTable(List.of("Col 1", "Col 2", "Col 3"),
+                List.of(
+                        List.of("Element1", "Element2", "Element3"),
+                        List.of("Element1", "Element2", "Element3"),
+                        List.of("Element1", "Element2", "Element3")
+                ));
     }
 }

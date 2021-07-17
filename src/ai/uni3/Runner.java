@@ -20,7 +20,7 @@ public class Runner {
         mp.add(gp);
         f.setState("main");
         gp.addRender(vt);
-        unsafeExecutor.execute(() -> System.out.println(vt.getAlgorithm().solve(true) ? "Solved" : "Error"));
+        unsafeExecutor.execute(() -> System.out.println(vt.getAlgorithm().solve() ? "Solved" : "Not solved:: Error"));
         gp.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
