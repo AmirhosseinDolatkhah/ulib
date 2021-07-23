@@ -62,12 +62,6 @@ public class MainFrame extends JFrame implements Runnable, StateBase<String, Con
 
         handleNimbusProperties();
 
-//        try {
-//            UIManager.setLookAndFeel(new DarculaLaf());
-//        } catch (UnsupportedLookAndFeelException e) {
-//            e.printStackTrace();
-//        }
-
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {

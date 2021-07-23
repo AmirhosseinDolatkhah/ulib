@@ -18,7 +18,7 @@ public class VisualTable extends GridPlain2D {
     public VisualTable(CoordinatedScreen cs, int[][] cells) {
         super(cs, cells.length, cells[0].length);
         this.cells = cells;
-        algorithm = new BacktrackAlgorithm(cells, CheckingMethod.MAC);
+        algorithm = new BacktrackAlgorithm(cells, CheckingMethod.FORWARD_CHECKING);
         gridColor = Color.WHITE;
         for (int i = 0; i < numOfRows; i++)
             for (int j = 0; j < numOfCols; j++) {

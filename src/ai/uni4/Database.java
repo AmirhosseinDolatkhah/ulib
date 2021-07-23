@@ -135,7 +135,8 @@ public class Database {
     }
 
     private double possibilityNegative(String word1, String word2) {
-        if(unigram) return 0;
+        if (unigram)
+            return 0;
         var pair = word1 + " " + word2;
         var res = negativePossibilities.get(pair);
         if (res == null) {
@@ -146,7 +147,7 @@ public class Database {
     }
 
     public double possibility(String word1, String word2, boolean positive) {
-        if(positive)
+        if (positive)
             return lambda3 * possibilityPositive(word1, word2) +
                     lambda2 * possibilityPositive(word2) +
                     lambda1 * epsilon;
