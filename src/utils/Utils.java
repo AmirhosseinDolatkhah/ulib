@@ -1199,23 +1199,22 @@ public final class Utils {
         f.add(gp);
 
         int[] count = { 0 };
-        gp.addRender(g -> recursiveGeometricTask((depth, pos, points) -> {
+        gp.addRender(g -> recursiveTriangularTask((depth, pos, p1, p2, p3) -> {
             var p = gp.getRotationAroundCenter();
             if (pos == 4)
                 return null;
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g.setColor(Color.GREEN);
-            var m1 = gp.screen(points[0].rotate(p.x, p.y, p.z));
-            var m2 = gp.screen(points[1].rotate(p.x, p.y, p.z));
-            var m3 = gp.screen(points[2].rotate(p.x, p.y, p.z));
-            var m4 = gp.screen(points[3].rotate(p.x, p.y, p.z));
+            var m1 = gp.screen(p1.rotate(p.x, p.y, p.z));
+            var m2 = gp.screen(p2.rotate(p.x, p.y, p.z));
+            var m3 = gp.screen(p3.rotate(p.x, p.y, p.z));
             g.drawLine(m1.x, m1.y, m2.x, m2.y);
             g.drawLine(m2.x, m2.y, m3.x, m3.y);
             g.drawLine(m1.x, m1.y, m3.x, m3.y);
-            g.drawLine(m1.x, m1.y, m4.x, m4.y);
             return null;
-        }, 3, List.of(0, 1, 2, 3), Point3D.of(0, 1, 0), Point3D.of(1, 0, 0), Point3D.of(-1, 0, 0), Point3D.of(-1, 0, 1)));
+        }, 6, List.of(0, 1, 2, 3), Point3D.of(0, 1, 0), Point3D.of(1, 0, 0), Point3D.of(-1, 0, 0)));
 
+        gp.camera().setPathToSaveFrameSequence("tmp/frames");
 
         SwingUtilities.invokeLater(f);
     }
