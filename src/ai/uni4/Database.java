@@ -227,5 +227,6 @@ public class Database {
         var db = new Database("tmp/ai4/rt-polarity.pos", "tmp/ai4/rt-polarity.neg", false);
         System.out.println(db.positive.entrySet().stream().sorted(Map.Entry.comparingByValue()).toList());
         System.out.println(db.negative.entrySet().stream().sorted(Map.Entry.comparingByValue()).toList());
+        
     }
 }

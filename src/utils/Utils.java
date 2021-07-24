@@ -12,12 +12,14 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.jfugue.pattern.Pattern;
 import org.jfugue.player.Player;
 import org.jfugue.theory.ChordProgression;
+import swingutils.MainFrame;
 import utils.annotation.NotFinal;
 import utils.predicate.IntBinaryPredicate;
 import visualization.canvas.*;
 import visualization.canvas.Canvas;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
@@ -1056,6 +1058,69 @@ public final class Utils {
         System.out.println(sb);
     }
 
+    /////////////// Recursive Caller
+    public static RecursiveTriangleConsumer recursiveTriangularTask(RecursiveTriangleConsumer job, int depth, List<Integer> legalPos, Point3D p1,
+            Point3D p2, Point3D p3) {
+        return recursiveTriangularTask0(job, depth, 0, legalPos, p1, p2, p3);
+    }
+
+    private static RecursiveTriangleConsumer recursiveTriangularTask0(RecursiveTriangleConsumer job, int depth, int pos,
+            List<Integer> legalPos, Point3D p1, Point3D p2, Point3D p3) {
+        if (depth-- < 0 || !legalPos.contains(pos))
+            return job;
+        var res = job.accept(depth, pos, p1, p2, p3);
+        if (res == null)
+            res = job;
+        var m1 = Point3D.of((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, (p1.z + p2.z) / 2);
+        var m2 = Point3D.of((p2.x + p3.x) / 2, (p2.y + p3.y) / 2, (p2.z + p3.z) / 2);
+        var m3 = Point3D.of((p1.x + p3.x) / 2, (p1.y + p3.y) / 2, (p1.z + p3.z) / 2);
+        recursiveTriangularTask0(res, depth, 1, legalPos, p1, m1, m3);
+        recursiveTriangularTask0(res, depth, 3, legalPos, m3, m2, p3);
+        recursiveTriangularTask0(res, depth, 4, legalPos, m1, m2, m3);
+        recursiveTriangularTask0(res, depth, 2, legalPos, m1, p2, m2);
+        return res;
+    }
+
+    @FunctionalInterface
+    public interface RecursiveTriangleConsumer {
+        RecursiveTriangleConsumer accept(int depth, int pos, Point3D p1, Point3D p2, Point3D p3);
+    }
+
+
+    public static RecursiveGeometricConsumer recursiveGeometricTask(RecursiveGeometricConsumer job, int depth, List<Integer> legalPos, Point3D... points) {
+        return recursiveGeometricTask0(job, depth, 0, legalPos, points);
+    }
+
+    private static RecursiveGeometricConsumer recursiveGeometricTask0(RecursiveGeometricConsumer job, int depth, int pos,
+            List<Integer> legalPos, Point3D... points) {
+        if (depth-- < 0 || !legalPos.contains(pos))
+            return job;
+        var res = job.accept(depth, pos, points);
+        if (res == null)
+            res = job;
+        Point3D[] newPoints = new Point3D[points.length];
+        for (int i = 0; i < points.length - 1; i++) {
+            var p1 = points[i];
+            var p2 = points[i + 1];
+            newPoints[i] = Point3D.of((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, (p1.z + p2.z) / 2);
+        }
+        var p1 = points[0];
+        var p2 = points[points.length - 1];
+        newPoints[points.length - 1] = Point3D.of((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, (p1.z + p2.z) / 2);
+
+        for (int i = 0; i < points.length; i++) {
+            var t = newPoints[i];
+            newPoints[i] = points[i];
+            recursiveGeometricTask0(res, depth, i + 1, legalPos, newPoints);
+            newPoints[i] = t;
+        }
+        return res;
+    }
+
+    @FunctionalInterface
+    public interface RecursiveGeometricConsumer {
+        RecursiveGeometricConsumer accept(int depth, int pos, Point3D... points);
+    }
     /////////////// Exploration of JFugue
     private static void simpleNotePlay() {
         Pattern pattern = new ChordProgression("I IV V")
@@ -1129,12 +1194,29 @@ public final class Utils {
 //                "png");
 
 //        saveRenderedImage(getScaledImage(readImage("tmp/img_2.png"), 5, 5), "this", "png");
+        var f = new MainFrame();
+        var gp = new Graph3DCanvas();
+        f.add(gp);
 
-        showTable(List.of("Col 1", "Col 2", "Col 3"),
-                List.of(
-                        List.of("Element1", "Element2", "Element3"),
-                        List.of("Element1", "Element2", "Element3"),
-                        List.of("Element1", "Element2", "Element3")
-                ));
+        int[] count = { 0 };
+        gp.addRender(g -> recursiveGeometricTask((depth, pos, points) -> {
+            var p = gp.getRotationAroundCenter();
+            if (pos == 4)
+                return null;
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g.setColor(Color.GREEN);
+            var m1 = gp.screen(points[0].rotate(p.x, p.y, p.z));
+            var m2 = gp.screen(points[1].rotate(p.x, p.y, p.z));
+            var m3 = gp.screen(points[2].rotate(p.x, p.y, p.z));
+            var m4 = gp.screen(points[3].rotate(p.x, p.y, p.z));
+            g.drawLine(m1.x, m1.y, m2.x, m2.y);
+            g.drawLine(m2.x, m2.y, m3.x, m3.y);
+            g.drawLine(m1.x, m1.y, m3.x, m3.y);
+            g.drawLine(m1.x, m1.y, m4.x, m4.y);
+            return null;
+        }, 3, List.of(0, 1, 2, 3), Point3D.of(0, 1, 0), Point3D.of(1, 0, 0), Point3D.of(-1, 0, 0), Point3D.of(-1, 0, 1)));
+
+
+        SwingUtilities.invokeLater(f);
     }
 }

@@ -164,5 +164,10 @@ public class PointMover extends Shape3D {
         gp.addRender(mover);
 
         SwingUtilities.invokeLater(f);
+
+        new Timer(20, e -> {
+            mover.move();
+            gp.repaint();
+        }).start();
     }
 }
