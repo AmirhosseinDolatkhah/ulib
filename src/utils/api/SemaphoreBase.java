@@ -33,6 +33,21 @@ public interface SemaphoreBase<K> {
             e.printStackTrace();
         }
     }
+    default void acquireIfExist(K key) {
+        var lock = getSemaphore(key);
+        if (lock != null) {
+            try {
+                lock.acquire();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    default void releaseIfExist(K key) {
+        var lock = getSemaphore(key);
+        if (lock != null)
+            lock.release();
+    }
     default int drainPermits(K key) {
         return getSemaphore(key).drainPermits();
     }
