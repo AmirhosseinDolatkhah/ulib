@@ -30,6 +30,7 @@ import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -594,6 +595,12 @@ public final class Utils {
 
     public static Image getImage(String absPath) {
         return Toolkit.getDefaultToolkit().getImage(absPath);
+    }
+
+    public static String loadStringResource(String path) {
+        try (var scanner = new Scanner(Objects.requireNonNull(Utils.class.getResourceAsStream(path)), StandardCharsets.UTF_8)) {
+            return scanner.useDelimiter("\\A").next();
+        }
     }
 
     public static int checkBounds(int value, int min, int max) {
