@@ -1,6 +1,6 @@
 package ai.uni3;
 
-import utils.SemaphoreBase;
+import utils.api.SemaphoreBase;
 import utils.annotation.Algorithm;
 
 import java.awt.*;

@@ -1,7 +1,6 @@
 package swingutils;
 
-import com.bulenkov.darcula.DarculaLaf;
-import utils.StateBase;
+import utils.api.StateBase;
 
 import javax.swing.*;
 import java.awt.*;

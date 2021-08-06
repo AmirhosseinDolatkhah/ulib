@@ -1,4 +1,4 @@
-package utils;
+package utils.api;
 
 import javax.swing.*;
 import java.util.Map;

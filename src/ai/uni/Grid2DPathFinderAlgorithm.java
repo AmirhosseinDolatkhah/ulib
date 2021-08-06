@@ -3,7 +3,7 @@ package ai.uni;
 
 import utils.annotation.Algorithm;
 import org.jetbrains.annotations.NotNull;
-import utils.SemaphoreBase;
+import utils.api.SemaphoreBase;
 
 import java.awt.*;
 import java.util.*;
