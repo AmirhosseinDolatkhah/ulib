@@ -5,13 +5,10 @@ import jmath.datatypes.functions.ColorFunction;
 import jmath.datatypes.functions.IntMapper2D;
 import jmath.datatypes.functions.Mapper2D;
 import jmath.datatypes.tuples.Point3D;
-import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.io.MemoryUsageSetting;
-import org.apache.pdfbox.multipdf.PDFMergerUtility;
-import org.apache.pdfbox.text.PDFTextStripper;
-import org.jfugue.pattern.Pattern;
-import org.jfugue.player.Player;
-import org.jfugue.theory.ChordProgression;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 import swingutils.MainFrame;
 import utils.annotation.NotFinal;
 import utils.predicate.IntBinaryPredicate;
@@ -78,7 +75,7 @@ public final class Utils {
     }
 
     ///////////////////
-    public static BufferedImage getCanvasImage(Canvas canvas) {
+    public static @NotNull BufferedImage getCanvasImage(@NotNull Canvas canvas) {
         var res = new BufferedImage(canvas.getWidth(), canvas.getHeight(), BufferedImage.TYPE_INT_RGB);
         var g2d = res.createGraphics();
         canvas.paintComponents(g2d);
@@ -86,7 +83,7 @@ public final class Utils {
         return res;
     }
 
-    public static void saveCanvasAsImage(String path, Canvas canvas) {
+    public static void saveCanvasAsImage(@NotNull String path, Canvas canvas) {
         try {
             ImageIO.write(getCanvasImage(canvas),
                     path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : "jpg",
@@ -96,7 +93,8 @@ public final class Utils {
         }
     }
 
-    public static Color randomColor() {
+    @Contract(" -> new")
+    public static @NotNull Color randomColor() {
         return new Color((int) (Math.random() * Integer.MAX_VALUE));
     }
 
@@ -107,13 +105,13 @@ public final class Utils {
         return Double.parseDouble(res.substring(0, res.indexOf('.') + precision + 1));
     }
 
-    public static int[] getIntColorArrayOfImage(BufferedImage bi) {
+    public static int[] getIntColorArrayOfImage(@NotNull BufferedImage bi) {
         return bi.getRaster().getDataBuffer() instanceof DataBufferInt b ?
                 b.getData() :
                 ((DataBufferInt) exactCloneWithARGB(bi).getRaster().getDataBuffer()).getData();
     }
 
-    public static int[][] getIntColorArray2dOfImage(BufferedImage bi) {
+    public static int[] @NotNull [] getIntColorArray2dOfImage(BufferedImage bi) {
         return getAs2dArray(getIntColorArrayOfImage(bi), bi.getWidth(), bi.getHeight());
     }
 
@@ -145,19 +143,19 @@ public final class Utils {
             }
     }
 
-    public static BufferedImage createImage(int width, int height, IntBinaryOperator colorFunc, int numOfThreads) {
+    public static @NotNull BufferedImage createImage(int width, int height, IntBinaryOperator colorFunc, int numOfThreads) {
         var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         multiThreadIntArraySetter(getIntColorArrayOfImage(res), i -> colorFunc.applyAsInt(i / width, i % width), numOfThreads);
         return res;
     }
 
-    public static BufferedImage createImage(int width, int height, IntUnaryOperator colorFunc, int numOfThreads) {
+    public static @NotNull BufferedImage createImage(int width, int height, IntUnaryOperator colorFunc, int numOfThreads) {
         var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         multiThreadIntArraySetter(getIntColorArrayOfImage(res), colorFunc, numOfThreads);
         return res;
     }
 
-    public static BufferedImage createImage(CoordinatedCanvas cc, ColorFunction colorFunc, int numOfThreads) {
+    public static @NotNull BufferedImage createImage(@NotNull CoordinatedCanvas cc, ColorFunction colorFunc, int numOfThreads) {
         var w = cc.getWidth();
         var h = cc.getHeight();
         var res = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
@@ -166,7 +164,7 @@ public final class Utils {
         return res;
     }
 
-    public static BufferedImage createImage(int width, int height, Render render) {
+    public static @NotNull BufferedImage createImage(int width, int height, @NotNull Render render) {
         var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         var g2d = res.createGraphics();
         render.render(g2d);
@@ -174,7 +172,7 @@ public final class Utils {
         return res;
     }
 
-    public static BufferedImage[] createImageSequence(int width, int height, Render render, int numOfFrames) {
+    public static BufferedImage @NotNull [] createImageSequence(int width, int height, Render render, int numOfFrames) {
         var res = new BufferedImage[numOfFrames];
         for (int i = 0; i < numOfFrames; i++) {
             var bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -187,8 +185,9 @@ public final class Utils {
         return res;
     }
 
+    @Contract("null -> fail")
     @Deprecated(forRemoval = true)
-    public static BufferedImage createMergeImageFromImageSequence(BufferedImage[] imageSequence) {
+    public static @NotNull BufferedImage createMergeImageFromImageSequence(BufferedImage[] imageSequence) {
         if (imageSequence == null || imageSequence.length == 0)
             throw new IllegalArgumentException("AHD:: image sequence is null or empty");
         var res = new BufferedImage(imageSequence[0].getWidth(), imageSequence[0].getHeight(), BufferedImage.TYPE_INT_ARGB);
@@ -198,7 +197,7 @@ public final class Utils {
         return res;
     }
 
-    public static BufferedImage createImageSingleThread(int width, int height, IntUnaryOperator colorFunc) {
+    public static @NotNull BufferedImage createImageSingleThread(int width, int height, IntUnaryOperator colorFunc) {
         var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         var arr = getIntColorArrayOfImage(res);
         for (int i = 0; i < arr.length; i++)
@@ -240,11 +239,11 @@ public final class Utils {
         multiThreadIntArraySetter(pixels, i -> func.applyAsInt(pixels[i]), numOfThreads);
     }
 
-    public static BufferedImage readImage(String path) throws IOException {
+    public static @NotNull BufferedImage readImage(String path) throws IOException {
         return exactCloneWithARGB(ImageIO.read(new File(path)));
     }
 
-    private static BufferedImage exactCloneWithARGB(BufferedImage source) {
+    private static @NotNull BufferedImage exactCloneWithARGB(@NotNull BufferedImage source) {
         var res = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
         var g = res.createGraphics();
         g.drawImage(source, 0, 0, null);
@@ -252,7 +251,7 @@ public final class Utils {
         return res;
     }
 
-    public static BufferedImage glitchedCloneOfImage(BufferedImage source, IntBinaryOperator colorFunction, DoubleSupplier randFactorFunction) {
+    public static @NotNull BufferedImage glitchedCloneOfImage(@NotNull BufferedImage source, IntBinaryOperator colorFunction, DoubleSupplier randFactorFunction) {
         final var w = source.getWidth();
         var res = new BufferedImage(w, source.getHeight(), BufferedImage.TYPE_INT_ARGB);
         final var s = getIntColorArrayOfImage(source);
@@ -266,7 +265,7 @@ public final class Utils {
         return res;
     }
 
-    public static BufferedImage cloneAffectivelyImage(BufferedImage source, IntUnaryOperator effector,
+    public static @NotNull BufferedImage cloneAffectivelyImage(@NotNull BufferedImage source, IntUnaryOperator effector,
             IntBinaryPredicate changePredicate) {
         final var w = source.getWidth();
         var res = new BufferedImage(w, source.getHeight(), BufferedImage.TYPE_INT_ARGB);
@@ -278,7 +277,7 @@ public final class Utils {
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
-    public static BufferedImage cloneSpatialAffectedImage(BufferedImage source, IntMapper2D spatialMapper,
+    public static @NotNull BufferedImage cloneSpatialAffectedImage(@NotNull BufferedImage source, IntMapper2D spatialMapper,
             IntBinaryPredicate mappingPredicate, IntBinaryOperator colorIfNotInBound,
             IntBinaryOperator colorIfNotMapping) {
         final var w = source.getWidth();
@@ -305,7 +304,7 @@ public final class Utils {
         return res;
     }
 
-    public static BufferedImage cloneSpatialAffectedImage(BufferedImage source, Mapper2D mapper) {
+    public static @NotNull BufferedImage cloneSpatialAffectedImage(@NotNull BufferedImage source, Mapper2D mapper) {
         final var w = source.getWidth();
         final var h = source.getHeight();
         return cloneSpatialAffectedImage(source,
@@ -322,14 +321,14 @@ public final class Utils {
         );
     }
 
-    public static int[][] getAs2dArray(int[] array, int width, int height) {
+    public static int[] @NotNull [] getAs2dArray(int[] array, int width, int height) {
         var res = new int[height][width];
         for (int i = 0; i < height; i++)
             System.arraycopy(array, i * width, res[i], 0, width);
         return res;
     }
 
-    public static BufferedImage createMergeImageFromImageSequence(Collection<BufferedImage> images, IntBinaryOperator imgIndexProvider,
+    public static @NotNull BufferedImage createMergeImageFromImageSequence(@NotNull Collection<BufferedImage> images, IntBinaryOperator imgIndexProvider,
             int x, int y, int width, int height) {
         var res = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         var c = getIntColorArrayOfImage(res);
@@ -341,13 +340,13 @@ public final class Utils {
         return res;
     }
 
-    public static BufferedImage createMergeImageFromImageSequence(Collection<BufferedImage> images, IntBinaryOperator imgIndexProvider) {
+    public static @NotNull BufferedImage createMergeImageFromImageSequence(Collection<BufferedImage> images, IntBinaryOperator imgIndexProvider) {
         return createMergeImageFromImageSequence(images, imgIndexProvider, 0, 0,
                 images.stream().mapToInt(BufferedImage::getWidth).min().orElse(0),
                 images.stream().mapToInt(BufferedImage::getHeight).min().orElse(0));
     }
 
-    public static BufferedImage squareBaseSample(BufferedImage source, int squareWidth, int squareHeight) {
+    public static @NotNull BufferedImage squareBaseSample(@NotNull BufferedImage source, int squareWidth, int squareHeight) {
         var ws = source.getWidth();
         var w = ws / squareWidth;
         var h = source.getHeight() / squareHeight;
@@ -360,7 +359,7 @@ public final class Utils {
         return res;
     }
 
-    public static BufferedImage getRotatedImage(BufferedImage bi, double radian) {
+    public static @NotNull BufferedImage getRotatedImage(@NotNull BufferedImage bi, double radian) {
         final double sin = Math.abs(Math.sin(radian));
         final double cos = Math.abs(Math.cos(radian));
         final int w = (int) Math.floor(bi.getWidth() * cos + bi.getHeight() * sin);
@@ -375,7 +374,7 @@ public final class Utils {
         return rotatedImage;
     }
 
-    public static BufferedImage getScaledImage(BufferedImage bi, double xFactor, double yFactor) {
+    public static BufferedImage getScaledImage(@NotNull BufferedImage bi, double xFactor, double yFactor) {
         final int w = bi.getWidth();
         final int h = bi.getHeight();
         BufferedImage scaledImage = new BufferedImage((int) (w * xFactor), (int) (h * yFactor), BufferedImage.TYPE_INT_ARGB);
@@ -386,7 +385,7 @@ public final class Utils {
     }
     //////////////////////
 
-    public static <T> AtomicReference<T> checkTimePerform(
+    public static <T> @NotNull AtomicReference<T> checkTimePerform(
             Task<T> task,
             boolean inCurrentThread,
             String name,
@@ -406,7 +405,7 @@ public final class Utils {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public static <T> AtomicReference<T> checkTimePerform(
+    public static <T> @NotNull AtomicReference<T> checkTimePerform(
             Task<T> task,
             boolean inCurrentThread,
             String name,
@@ -465,7 +464,7 @@ public final class Utils {
         }
     }
 
-    public static Point3D[] point3DArray(double... values) {
+    public static Point3D @NotNull [] point3DArray(double @NotNull ... values) {
         Point3D[] res = new Point3D[values.length / 3];
         for (int i = 0; i < values.length / 3; i++)
             res[i] = new Point3D(values[i * 3], values[i * 3 + 1], values[i * 3 + 2]);
@@ -507,7 +506,7 @@ public final class Utils {
         return obj;
     }
 
-    public static byte[] serializeObject(Object obj) throws IOException {
+    public static byte @NotNull [] serializeObject(Object obj) throws IOException {
         ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bytesOut);
         oos.writeObject(obj);
@@ -518,7 +517,7 @@ public final class Utils {
         return bytes;
     }
 
-    public static byte[] convertFileToByteArray(File file) {
+    public static byte @NotNull [] convertFileToByteArray(@NotNull File file) {
         FileInputStream fis = null;
         byte[] bArray = new byte[(int) file.length()];
         try {
@@ -550,7 +549,7 @@ public final class Utils {
         }
     }
 
-    public static Object[] readObjects(String path) {
+    public static Object @NotNull [] readObjects(String path) {
         ArrayList<Object> result = new ArrayList<>();
         FileInputStream fStream;
         try (ObjectInputStream oStream = new ObjectInputStream(fStream = new FileInputStream(path))) {
@@ -571,7 +570,7 @@ public final class Utils {
         return result.toArray();
     }
 
-    public static void arrayShuffle(Object[] arr) {
+    public static void arrayShuffle(Object @NotNull [] arr) {
         for (int i = 0; i < arr.length; i++) {
             int rp = (int) (Math.random() * arr.length);
             var temp = arr[i];
@@ -580,7 +579,7 @@ public final class Utils {
         }
     }
 
-    public static void saveRenderedImage(RenderedImage img, String absPath, String formatName) throws IOException {
+    public static void saveRenderedImage(RenderedImage img, @NotNull String absPath, String formatName) throws IOException {
         var dirSpecified = absPath.contains("/");
         if (dirSpecified) {
             var dir = new File(absPath.substring(0, absPath.lastIndexOf('/')));
@@ -664,7 +663,7 @@ public final class Utils {
         return new Robot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
     }
 
-    public static String getFileAsString(String path) throws IOException {
+    public static @NotNull String getFileAsString(String path) throws IOException {
         var br = new BufferedReader(new FileReader(path));
         var sb = new StringBuilder();
         String s;
@@ -674,13 +673,13 @@ public final class Utils {
         return sb.toString().trim();
     }
 
-    public static String setSystemVolume(int volume) throws IOException {
+    public static @NotNull String setSystemVolume(int volume) throws IOException {
         if (volume < 0 || volume > 100)
             throw new RuntimeException("Error: " + volume + " is not a valid number. Choose a number between 0 and 100");
         return doNirCMD("setsysvolume " + (655.35 * volume)) + doNirCMD("mutesysvolume 0");
     }
 
-    public static String doCMD(String command) throws IOException {
+    public static @NotNull String doCMD(@NotNull String command) throws IOException {
         var proc = Runtime.getRuntime().exec(command.trim());
         BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
         BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
@@ -696,7 +695,7 @@ public final class Utils {
         return sb.toString();
     }
 
-    public static String doNirCMD(String command) throws IOException {
+    public static @NotNull String doNirCMD(String command) throws IOException {
         return doCMD(nirCMDPath + " " + command);
     }
 
@@ -704,7 +703,7 @@ public final class Utils {
         String getInfo(File file);
     }
 
-    public static List<String> filesInfo(String rootDirectory, FileFilter fileFilter, FileInfo fileInfo) {
+    public static @NotNull List<String> filesInfo(String rootDirectory, FileFilter fileFilter, FileInfo fileInfo) {
         var res = new ArrayList<String>();
         var ff = new File(rootDirectory).listFiles(fileFilter);
         if (ff == null)
@@ -717,49 +716,49 @@ public final class Utils {
         return res;
     }
 
-    public static String readAloud(String text) throws IOException {
+    public static @NotNull String readAloud(String text) throws IOException {
         return doNirCMD("speak text \"" + text + '\"');
     }
 
-    public static String setMuteSystemSpeaker(boolean mute) throws IOException {
+    public static @NotNull String setMuteSystemSpeaker(boolean mute) throws IOException {
         return doNirCMD("mutesysvolume " + (mute ? 1 : 0));
     }
 
-    public static String toggleMuteSystemSpeaker() throws IOException {
+    public static @NotNull String toggleMuteSystemSpeaker() throws IOException {
         return doNirCMD("mutesysvolume 2");
     }
 
-    public static String turnOffMonitor() throws IOException {
+    public static @NotNull String turnOffMonitor() throws IOException {
         return doNirCMD("monitor off");
     }
 
-    public static String startDefaultScreenSaver() throws IOException {
+    public static @NotNull String startDefaultScreenSaver() throws IOException {
         return doNirCMD("screensaver");
     }
 
-    public static String putInStandByMode() throws IOException {
+    public static @NotNull String putInStandByMode() throws IOException {
         return doNirCMD("standby");
     }
 
-    public static String logOffCurrentUser() throws IOException {
+    public static @NotNull String logOffCurrentUser() throws IOException {
         return doNirCMD("exitwin logoff");
     }
 
-    public static String reboot() throws IOException {
+    public static @NotNull String reboot() throws IOException {
         return doNirCMD("exitwin reboot");
     }
 
-    public static String powerOff() throws IOException {
+    public static @NotNull String powerOff() throws IOException {
         return doNirCMD("exitwin poweroff");
     }
 
-    public static String getAllPasswordsFromAllBrowsers() throws IOException {
+    public static @NotNull String getAllPasswordsFromAllBrowsers() throws IOException {
         doCMD(".\\bin\\WebBrowserPassView.exe /stext \"tmp.exe\"");
         var res = getFileAsString(".\\tmp.exe");
         return getFileAsString(".\\tmp.exe") + new File(".\\tmp.exe").delete();
     }
 
-    public static String setPrimaryScreenBrightness() throws IOException {
+    public static @NotNull String setPrimaryScreenBrightness() throws IOException {
         return doCMD(".\\bin\\ControlMyMonitor.exe /SetValue Primary 10 10");
     }
 
@@ -767,39 +766,39 @@ public final class Utils {
         robot.mouseMove(x, y);
     }
 
-    public static void setMousePos(Point p) {
+    public static void setMousePos(@NotNull Point p) {
         robot.mouseMove(p.x, p.y);
     }
 
-    public static String getWifiInfo() throws IOException {
+    public static @NotNull String getWifiInfo() throws IOException {
         doCMD(".\\bin\\WifiInfoView.exe /stext tmp.exe");
         return getFileAsStringAndDelete("tmp.exe");
     }
 
-    public static String getFileAsStringAndDelete(String path) throws IOException {
+    public static @NotNull String getFileAsStringAndDelete(String path) throws IOException {
         return getFileAsString(path) + "\n<del>" + new File(path).delete();
     }
 
-    public static String getIpNetInfo(String ip) throws IOException {
+    public static @NotNull String getIpNetInfo(String ip) throws IOException {
         return doCMD(".\\bin\\IPNetInfo.exe /ip " + ip);
     }
 
-    public static String getPortsInfo() throws IOException {
+    public static @NotNull String getPortsInfo() throws IOException {
         doCMD(".\\bin\\cports.exe /stext tmp.exe");
         return getFileAsStringAndDelete("tmp.exe");
     }
 
-    public static String getNetworkTrafficInfo() throws IOException {
+    public static @NotNull String getNetworkTrafficInfo() throws IOException {
         doCMD(".\\bin\\NetworkTrafficView.exe /stext tmp.exe");
         return getFileAsStringAndDelete("tmp.exe");
     }
 
-    public static String getBatteryInfo() throws IOException {
+    public static @NotNull String getBatteryInfo() throws IOException {
         doCMD(".\\bin\\BatteryInfoView.exe /stext tmp.exe");
         return getFileAsStringAndDelete("tmp.exe");
     }
 
-    public static String getBrowsersHistory() throws IOException {
+    public static @NotNull String getBrowsersHistory() throws IOException {
         doCMD(".\\bin\\BrowsingHistoryView.exe /stext tmp.exe");
         return getFileAsStringAndDelete("tmp.exe");
     }
@@ -819,7 +818,7 @@ public final class Utils {
         return fileCount(dir, fileExtension);
     }
 
-    private static int fileCount(File dir, String fileExtension) {
+    private static int fileCount(@NotNull File dir, String fileExtension) {
         var res = 0;
         for (var f : Objects.requireNonNull(dir.listFiles()))
             if (f.isFile() && f.getName().trim().toLowerCase().endsWith(fileExtension)) {
@@ -875,7 +874,7 @@ public final class Utils {
         return getTextFileAnalysis(directoryPath, textFileExtension, null);
     }
 
-    private static Map<String, Map<TextFileInfo, Integer>> getTextFileAnalysis(File dir, String extension) {
+    private static @NotNull Map<String, Map<TextFileInfo, Integer>> getTextFileAnalysis(@NotNull File dir, String extension) {
         var res = new HashMap<String, Map<TextFileInfo, Integer>>();
         for (var f : Objects.requireNonNull(dir.listFiles()))
             if (f.isFile() && f.getName().trim().toLowerCase().endsWith(extension)) {
@@ -886,7 +885,7 @@ public final class Utils {
         return res;
     }
 
-    public static Map<TextFileInfo, Integer> getTextFileInfo(String filePath) {
+    public static @Nullable @Unmodifiable Map<TextFileInfo, Integer> getTextFileInfo(String filePath) {
         int numOfLines = 0;
         int numOfEmptyLines = 0;
         int numOfCharacters = 0;
@@ -1007,31 +1006,31 @@ public final class Utils {
 
     /////// pdf file utils
 
-    public static void pdfFileMerger(Collection<File> pdfFiles, String destination) throws IOException {
-        var pmu = new PDFMergerUtility();
-        for (var pdfFile : pdfFiles)
-            pmu.addSource(pdfFile);
-        pmu.setDestinationFileName(destination);
-        pmu.mergeDocuments(null);
-        System.err.println("AHD:: Merge done");
-    }
+//    public static void pdfFileMerger(@NotNull Collection<File> pdfFiles, String destination) throws IOException {
+//        var pmu = new PDFMergerUtility();
+//        for (var pdfFile : pdfFiles)
+//            pmu.addSource(pdfFile);
+//        pmu.setDestinationFileName(destination);
+//        pmu.mergeDocuments(null);
+//        System.err.println("AHD:: Merge done");
+//    }
 
-    public static void pdfFileMerger(String destinationFile, File... files) throws IOException {
-        pdfFileMerger(Arrays.asList(files), destinationFile);
-    }
+//    public static void pdfFileMerger(String destinationFile, File... files) throws IOException {
+//        pdfFileMerger(Arrays.asList(files), destinationFile);
+//    }
 
-    public static void pdfFileMerger(String destination, String... files) throws IOException {
-        pdfFileMerger(Arrays.stream(files).map(File::new).toList(), destination);
-    }
+//    public static void pdfFileMerger(String destination, String... files) throws IOException {
+//        pdfFileMerger(Arrays.stream(files).map(File::new).toList(), destination);
+//    }
 
-    public static String getTextOfPdfFile(String pdfFilePath) throws IOException {
-        return new PDFTextStripper().getText(Loader.loadPDF(new File(pdfFilePath), (MemoryUsageSetting) null));
-    }
+//    public static String getTextOfPdfFile(String pdfFilePath) throws IOException {
+//        return new PDFTextStripper().getText(Loader.loadPDF(new File(pdfFilePath), (MemoryUsageSetting) null));
+//    }
 
     //////////// mp3 file
 
     @NotFinal
-    public static void mp3Merger(String destination, String... mp3Files) throws IOException {
+    public static void mp3Merger(String destination, String @NotNull ... mp3Files) throws IOException {
         var sb = new StringBuilder("copy /b \"");
         for (var f : mp3Files)
             sb.append(f).append("\" \"");
@@ -1040,12 +1039,13 @@ public final class Utils {
 
     /////////// show text table
 
+    @Deprecated
     public static void showTable(List<String> cols, List<List<String>> rows) {
         showTable(cols, rows, cols.stream().map(s -> s.length() + 8).toList());
     }
 
     @Deprecated
-    public static void showTable(List<String> cols, List<List<String>> rows, List<Integer> width) {
+    public static void showTable(@NotNull List<String> cols, List<List<String>> rows, List<Integer> width) {
         var sb = new StringBuilder();
         int colNumber = cols.size();
         for (int i = 0; i < colNumber; i++)
@@ -1093,11 +1093,12 @@ public final class Utils {
         RecursiveTriangleConsumer accept(int depth, int pos, Point3D p1, Point3D p2, Point3D p3);
     }
 
-
+    @Deprecated
     public static RecursiveGeometricConsumer recursiveGeometricTask(RecursiveGeometricConsumer job, int depth, List<Integer> legalPos, Point3D... points) {
         return recursiveGeometricTask0(job, depth, 0, legalPos, points);
     }
 
+    @Deprecated
     private static RecursiveGeometricConsumer recursiveGeometricTask0(RecursiveGeometricConsumer job, int depth, int pos,
             List<Integer> legalPos, Point3D... points) {
         if (depth-- < 0 || !legalPos.contains(pos))
@@ -1124,32 +1125,34 @@ public final class Utils {
         return res;
     }
 
+    @Deprecated
     @FunctionalInterface
     public interface RecursiveGeometricConsumer {
         RecursiveGeometricConsumer accept(int depth, int pos, Point3D... points);
     }
     /////////////// Exploration of JFugue
-    private static void simpleNotePlay() {
-        Pattern pattern = new ChordProgression("I IV V")
-                .distribute("7%6")
-                .allChordsAs("$0 $0 $0 $0 $1 $1 $0 $0 $2 $1 $0 $0")
-                .eachChordAs("$0ia100 $1ia80 $2ia80 $3ia80 $4ia100 $3ia80 $2ia80 $1ia80")
-                .getPattern()
-                .setInstrument("rock_organ")
-                .setTempo(150);
-        new Player().play(pattern);
-    }
+
+//    private static void simpleNotePlay() {
+//        Pattern pattern = new ChordProgression("I IV V")
+//                .distribute("7%6")
+//                .allChordsAs("$0 $0 $0 $0 $1 $1 $0 $0 $2 $1 $0 $0")
+//                .eachChordAs("$0ia100 $1ia80 $2ia80 $3ia80 $4ia100 $3ia80 $2ia80 $1ia80")
+//                .getPattern()
+//                .setInstrument("rock_organ")
+//                .setTempo(150);
+//        new Player().play(pattern);
+//    }
     
-    private static void jFugueTemp() {
-        var pattern = new ChordProgression("I IV V")
-                        .distribute("7%6")
-                        .allChordsAs("$0 $0 $0 $0 $1 $1 $0 $0 $2 $1 $0 $0")
-                        .eachChordAs("$0ia100 $1ia80 $2ia80 $3ia80 $4ia100 $3ia80 $2ia80 $1ia80")
-                        .getPattern()
-                        .setInstrument("rock_organ")
-                        .setTempo(150);
-        new Player().play(pattern);
-    }
+//    private static void jFugueTemp() {
+//        var pattern = new ChordProgression("I IV V")
+//                        .distribute("7%6")
+//                        .allChordsAs("$0 $0 $0 $0 $1 $1 $0 $0 $2 $1 $0 $0")
+//                        .eachChordAs("$0ia100 $1ia80 $2ia80 $3ia80 $4ia100 $3ia80 $2ia80 $1ia80")
+//                        .getPattern()
+//                        .setInstrument("rock_organ")
+//                        .setTempo(150);
+//        new Player().play(pattern);
+//    }
     
     ///////////////
 

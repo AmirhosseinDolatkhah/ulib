@@ -5,8 +5,8 @@ public class Pair<K, V> {
     private K k;
     private V v;
     private boolean approximateEquals;
-    private double precisionK;
-    private double precisionV;
+    private final double precisionK;
+    private final double precisionV;
 
     public Pair(K k, V v) {
         this(k, v, false, 0.0001, 0.0001);
@@ -53,9 +53,8 @@ public class Pair<K, V> {
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
-        if (!(obj instanceof Pair))
+        if (!(obj instanceof Pair<?, ?> that))
             return false;
-        var that = (Pair<?, ?>) obj;
         if (approximateEquals && that.isApproximateEquals()) {
             Number k1 = (Number) k;
             Number v1 = (Number) v;
