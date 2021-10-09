@@ -1,9 +1,6 @@
 import jmath.datatypes.functions.Surface;
 import jmath.datatypes.graph.Graph;
 import jmath.datatypes.tuples.Point3D;
-import lc.kra.system.mouse.GlobalMouseHook;
-import lc.kra.system.mouse.event.GlobalMouseAdapter;
-import lc.kra.system.mouse.event.GlobalMouseEvent;
 import swingutils.MainFrame;
 import visualization.canvas.Graph3DCanvas;
 import visualization.canvas.ImageCanvas;

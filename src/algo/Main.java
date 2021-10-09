@@ -1,9 +1,11 @@
 package algo;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 
 public class Main {
-    private static void subsequenceCheck(String s, String t) {
+    private static void subsequenceCheck(String s, @NotNull String t) {
         Stack<Character> stack = new Stack<>();
         for (int i = 0; i < t.length(); i++)
             stack.push(t.charAt(i));

@@ -161,7 +161,7 @@ public final class Sort {
 
     ////////////
     public static void main(String[] args) {
-        int len = 1_000_000;
+        int len = 100_000;
         var random = new int[len];
         Arrays.setAll(random, i -> (int) (Math.random() * Integer.MAX_VALUE));
         var clone = new int[len];
